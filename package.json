@@ -1,15 +1,14 @@
 {
   "name": "linenda",
-  "version": "1.0.0",
-  "description": "An Electron application with Vue",
+  "version": "0.2.0",
+  "description": "An agenda app, easy to use, free",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "Lin Jiasheng",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "start": "electron-vite preview",
-    "dev": "electron-vite dev",
+    "dev": "nodemon --watch src/renderer/src --watch src/main -e js,ts,vue,css,html --ignore dist/ --exec \"prettier --write . && electron-vite dev\"",
     "build": "electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
@@ -27,6 +26,8 @@
     "@fullcalendar/multimonth": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "@fullcalendar/vue3": "^6.1.15",
+    "element-plus": "^2.9.4",
+    "pinia": "^3.0.1",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
@@ -39,6 +40,7 @@
     "electron-vite": "^2.3.0",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^9.26.0",
+    "nodemon": "^3.1.9",
     "prettier": "^3.3.2",
     "vite": "^5.3.1",
     "vue": "^3.4.30"

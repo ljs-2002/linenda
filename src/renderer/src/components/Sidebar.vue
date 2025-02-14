@@ -3,18 +3,18 @@
     <ul>
       <li
         :class="{ active: currentRoute === '/calendar' }"
-        @click="navigateTo('/calendar')"
         title="日历视图"
+        @click="navigateTo('/calendar')"
       >
         <img src="@renderer/assets/calendar.svg" class="icon" />
       </li>
-      <li :class="{ active: currentRoute === '/tasks' }" @click="navigateTo('/tasks')" title="任务">
+      <li :class="{ active: currentRoute === '/tasks' }" title="任务" @click="navigateTo('/tasks')">
         <img src="@renderer/assets/tasks.svg" class="icon" />
       </li>
       <li
         :class="{ active: currentRoute === '/settings' }"
-        @click="navigateTo('/settings')"
         title="设置"
+        @click="navigateTo('/settings')"
       >
         <img src="@renderer/assets/settings.svg" class="icon" />
       </li>
