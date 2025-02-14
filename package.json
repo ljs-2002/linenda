@@ -1,6 +1,6 @@
 {
   "name": "linenda",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "An agenda app, easy to use, free",
   "main": "./out/main/index.js",
   "author": "Lin Jiasheng",
@@ -26,6 +26,7 @@
     "@fullcalendar/multimonth": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "@fullcalendar/vue3": "^6.1.15",
+    "better-sqlite3": "^11.8.1",
     "element-plus": "^2.9.4",
     "pinia": "^3.0.1",
     "vue-router": "^4.5.0"
@@ -37,6 +38,7 @@
     "@vue/eslint-config-prettier": "^9.0.0",
     "electron": "^31.0.2",
     "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9",
     "electron-vite": "^2.3.0",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^9.26.0",

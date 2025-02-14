@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import eventDatabase from './database.js'
 
 function createWindow() {
   // Create the browser window.
@@ -49,8 +50,21 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  ipcMain.handle('get-all-events', async () => {
+    return eventDatabase.getAllEvents()
+  })
+
+  ipcMain.handle('add-event', async (_, event) => {
+    return eventDatabase.addEvent(event)
+  })
+
+  ipcMain.handle('update-event', async (_, event) => {
+    return eventDatabase.updateEvent(event)
+  })
+
+  ipcMain.handle('delete-event', async (_, id) => {
+    return eventDatabase.deleteEvent(id)
+  })
 
   createWindow()
 

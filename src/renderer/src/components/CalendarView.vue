@@ -1,6 +1,6 @@
 <template>
   <div class="calendar-view">
-    <FullCalendar :options="calendarOptions" />
+    <FullCalendar ref="calendarRef" :options="calendarOptions" />
     <EventDialog ref="eventDialogRef" @save="handleEventSave" />
   </div>
 </template>
@@ -18,6 +18,7 @@ import { useCalendarStore } from '../stores/calendar'
 
 const calendarStore = useCalendarStore()
 const eventDialogRef = ref(null)
+const calendarRef = ref(null)
 
 const formatDateTime = (date) => {
   const year = date.getFullYear()
@@ -42,17 +43,26 @@ const handleDateSelect = (selectInfo) => {
   selectInfo.view.calendar.unselect() // clear date selection
 }
 
-const handleEventSave = (eventData) => {
+const handleEventSave = async (eventData) => {
   const { calendar, ...eventDetails } = eventData
   const newEvent = {
     ...eventDetails,
     id: Date.now().toString() // 简单的ID生成
   }
   calendar.addEvent(newEvent)
+  newEvent.allDay = Number(newEvent.allDay) // 转换 Boolean 为 INTEGER
+  await window.electron.ipcRenderer.invoke('add-event', newEvent)
 }
 
 const handleEventSet = (events) => {
   calendarStore.updateEvents(events)
+}
+
+const handleEventClick = async (clickInfo) => {
+  if (confirm(`是否删除事件 "${clickInfo.event.title}"？`)) {
+    clickInfo.event.remove()
+    await window.electron.ipcRenderer.invoke('delete-event', clickInfo.event.id)
+  }
 }
 
 const calendarOptions = {
@@ -70,7 +80,11 @@ const calendarOptions = {
   weekends: true,
   events: calendarStore.events,
   select: handleDateSelect,
-  eventsSet: handleEventSet
+  eventsSet: handleEventSet,
+  eventClick: handleEventClick
+  // eventChange
+  // eventAdd
+  // eventRemove
 }
 </script>
 
