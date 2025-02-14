@@ -1,8 +1,27 @@
-<script setup>
+<template>
+  <div id="app">
+    <Sidebar />
+    <div class="content">
+      <router-view />
+    </div>
+  </div>
+</template>
 
-const ipcHandle = () => window.electron.ipcRenderer.send('ping')
+<script setup>
+import Sidebar from './components/Sidebar.vue'
 </script>
 
-<template>
-test
-</template>
+<style>
+#app {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+</style>
