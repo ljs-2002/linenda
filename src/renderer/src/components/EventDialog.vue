@@ -102,7 +102,7 @@ const handleSubmit = async () => {
     dialogVisible.value = false
     resetForm()
   } catch (error) {
-    console.error(error.message)
+    console.error(error)
     ElMessage.error('请填写必填项')
   }
 }

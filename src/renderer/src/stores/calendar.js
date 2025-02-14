@@ -13,6 +13,8 @@ export const useCalendarStore = defineStore('calendar', () => {
     const loadedEvents = await window.electron.ipcRenderer.invoke('get-all-events')
     events.value = loadedEvents.map((event) => ({
       ...event,
+      durationEditable: true,
+      startEditable: true,
       allDay: Boolean(event.allDay)
     }))
   }

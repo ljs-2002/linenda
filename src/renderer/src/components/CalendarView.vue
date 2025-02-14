@@ -2,6 +2,11 @@
   <div class="calendar-view">
     <FullCalendar ref="calendarRef" :options="calendarOptions" />
     <EventDialog ref="eventDialogRef" @save="handleEventSave" />
+    <EventDetailsDialog
+      ref="eventDetailsDialogRef"
+      @save="handleEventUpdate"
+      @delete="handleEventDelete"
+    />
   </div>
 </template>
 
@@ -14,10 +19,12 @@ import interactionPlugin from '@fullcalendar/interaction'
 import listPlugin from '@fullcalendar/list'
 
 import EventDialog from './EventDialog.vue'
+import EventDetailsDialog from './EventDetailsDialog.vue'
 import { useCalendarStore } from '../stores/calendar'
 
 const calendarStore = useCalendarStore()
 const eventDialogRef = ref(null)
+const eventDetailsDialogRef = ref(null)
 const calendarRef = ref(null)
 
 const formatDateTime = (date) => {
@@ -37,7 +44,7 @@ const handleDateSelect = (selectInfo) => {
   eventDialogRef.value?.showDialog({
     start: formatDateTime(startTime),
     end: formatDateTime(endTime),
-    allDay: false,
+    allDay: selectInfo.allDay,
     calendar: selectInfo.view.calendar
   })
   selectInfo.view.calendar.unselect() // clear date selection
@@ -59,13 +66,45 @@ const handleEventSet = (events) => {
 }
 
 const handleEventClick = async (clickInfo) => {
-  if (confirm(`是否删除事件 "${clickInfo.event.title}"？`)) {
-    clickInfo.event.remove()
-    await window.electron.ipcRenderer.invoke('delete-event', clickInfo.event.id)
+  console.log(clickInfo.event)
+
+  eventDetailsDialogRef.value?.showDialog({
+    ...clickInfo.event.toPlainObject(),
+    calendar: clickInfo.view.calendar
+  })
+}
+
+const handleEventUpdate = async (eventData) => {
+  const { calendar, ...eventDetails } = eventData
+  // 更新日历显示
+  const event = calendar.getEventById(eventDetails.id)
+  if (event) {
+    event.setProp('title', eventDetails.title)
+    event.setStart(eventDetails.start)
+    event.setEnd(eventDetails.end)
+    event.setAllDay(eventDetails.allDay)
+    event.setExtendedProp('description', eventDetails.description)
+  }
+  // 更新数据库
+  try {
+    await window.electron.ipcRenderer.invoke('update-event', {
+      ...eventDetails,
+      allDay: Number(eventDetails.allDay)
+    })
+  } catch (error) {
+    console.error('更新事件失败', error)
   }
 }
 
-const calendarOptions = {
+const handleEventDelete = async (eventData) => {
+  const event = eventData.calendar.getEventById(eventData.id)
+  if (event) {
+    event.remove()
+    await window.electron.ipcRenderer.invoke('delete-event', eventData.id)
+  }
+}
+
+const calendarOptions = ref({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
   initialView: 'dayGridMonth',
   headerToolbar: {
@@ -75,6 +114,9 @@ const calendarOptions = {
   },
   editable: true,
   selectable: true,
+  eventDurationEditable: true,
+  eventResizableFromStart: true,
+  unselectAuto: true,
   selectMirror: true,
   dayMaxEvents: true,
   weekends: true,
@@ -85,7 +127,7 @@ const calendarOptions = {
   // eventChange
   // eventAdd
   // eventRemove
-}
+})
 </script>
 
 <style>
