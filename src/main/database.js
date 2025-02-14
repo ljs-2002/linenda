@@ -17,8 +17,8 @@ class EventDatabase {
         start TEXT NOT NULL,
         end TEXT NOT NULL,
         allDay INTEGER,
-        url TEXT,
-        description TEXT
+        url TEXT DEFAULT '',
+        description TEXT DEFAULT ''
       )
     `
     this.db.exec(createTable)
@@ -30,21 +30,31 @@ class EventDatabase {
   }
 
   addEvent(event) {
+    const eventWithDefaults = {
+      ...event,
+      url: event.url || '',
+      description: event.description || ''
+    }
     const stmt = this.db.prepare(`
       INSERT INTO events (id, title, start, end, allDay, url, description)
       VALUES (@id, @title, @start, @end, @allDay, @url, @description)
     `)
-    return stmt.run(event)
+    return stmt.run(eventWithDefaults)
   }
 
   updateEvent(event) {
+    const eventWithDefaults = {
+      ...event,
+      url: event.url || '',
+      description: event.description || ''
+    }
     const stmt = this.db.prepare(`
       UPDATE events 
       SET title = @title, start = @start, end = @end, 
           allDay = @allDay, url = @url, description = @description
       WHERE id = @id
     `)
-    return stmt.run(event)
+    return stmt.run(eventWithDefaults)
   }
 
   deleteEvent(id) {
