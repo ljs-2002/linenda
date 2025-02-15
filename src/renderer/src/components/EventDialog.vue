@@ -68,12 +68,15 @@ const eventForm = reactive({
   end: '',
   allDay: false,
   url: '',
-  description: ''
+  description: '',
+  durationEditable: true,
+  startEditable: true
 })
 
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  start: [{ required: true, message: '请选择开始时间', trigger: 'change' }]
+  start: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
+  end: [{ required: true, message: '请选择结束时间', trigger: 'change' }]
 }
 
 watch(
@@ -123,15 +126,25 @@ const resetForm = () => {
 
 const calendar = ref(null)
 
-const showDialog = (data = null) => {
-  if (data) {
+const showDialog = async (data = null) => {
+  // 重置表单
+  resetForm()
+
+  if (data && data.id) {
+    // 有 id 说明是编辑现有事件
     isNew.value = false
     const { calendar: cal, ...rest } = data
     calendar.value = cal
     Object.assign(eventForm, rest)
   } else {
+    // 没有 id 说明是新建事件
     isNew.value = true
-    resetForm()
+    if (data) {
+      // 如果传入了初始数据（如开始时间、结束时间等），则使用这些数据
+      const { calendar: cal, ...rest } = data
+      calendar.value = cal
+      Object.assign(eventForm, rest)
+    }
   }
   dialogVisible.value = true
 }
