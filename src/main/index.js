@@ -15,6 +15,12 @@ function createWindow() {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
+    },
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#ffffff00', // 透明背景
+      symbolColor: '#666666', // 按钮颜色
+      height: 36 // 标题栏高度（仅Windows生效）
     }
   })
 
@@ -69,6 +75,8 @@ app.whenReady().then(() => {
   ipcMain.handle('get-events-by-date-range', async (_, start, end) => {
     return eventDatabase.getEventsByDateRange(start, end)
   })
+
+  ipcMain.handle('get-platform', () => process.platform)
 
   createWindow()
 

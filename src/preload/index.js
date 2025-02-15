@@ -1,8 +1,13 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  onWindowStateChanged: (callback) => {
+    ipcRenderer.on('window-state-changed', (_, state) => callback(state))
+  },
+  windowControl: (action) => ipcRenderer.invoke('window:control', action)
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
