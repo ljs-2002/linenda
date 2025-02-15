@@ -66,6 +66,10 @@ app.whenReady().then(() => {
     return eventDatabase.deleteEvent(id)
   })
 
+  ipcMain.handle('get-events-by-date-range', async (_, start, end) => {
+    return eventDatabase.getEventsByDateRange(start, end)
+  })
+
   createWindow()
 
   app.on('activate', function () {

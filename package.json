@@ -1,6 +1,6 @@
 {
   "name": "linenda",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "description": "An agenda app, easy to use, free",
   "main": "./out/main/index.js",
   "author": "Lin Jiasheng",
@@ -27,9 +27,11 @@
     "@fullcalendar/timegrid": "^6.1.15",
     "@fullcalendar/vue3": "^6.1.15",
     "better-sqlite3": "^11.8.1",
+    "dayjs": "^1.11.13",
     "element-plus": "^2.9.4",
     "pinia": "^3.0.1",
-    "vue-router": "^4.5.0"
+    "vue-router": "^4.5.0",
+    "vue3-perfect-scrollbar": "^2.0.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.2",
