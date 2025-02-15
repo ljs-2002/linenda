@@ -197,21 +197,10 @@ watch(
     if (eventForm.start && eventForm.end) {
       const startTime = new Date(eventForm.start)
       const endTime = new Date(eventForm.end)
-      console.log(
-        'eventForm.start',
-        eventForm.start,
-        'startTime',
-        startTime,
-        'eventForm.end',
-        eventForm.end,
-        'endTime',
-        endTime
-      )
 
       if (newValue) {
         // 切换到全天事件
         eventForm.start = formatDateToLocal(startTime)
-
         // 确保结束日期至少比开始日期大1天
         const minEndTime = new Date(startTime.getTime() + 24 * 60 * 60 * 1000)
         if (endTime <= minEndTime) {
@@ -219,7 +208,6 @@ watch(
         } else {
           eventForm.end = formatDateToLocal(endTime)
         }
-        console.log('eventForm.start', eventForm.start, 'eventForm.end', eventForm.end)
       } else {
         // 切换到非全天事件时，强制设置时间在同一天
         const dateStr = formatDateToLocal(startTime)
@@ -238,43 +226,35 @@ const isSameDay = (date1, date2) => {
   const d2 = new Date(date2)
   return d1.toDateString() === d2.toDateString()
 }
+
+const processEventData = (data) => {
+  const { calendar: cal, ...rest } = data
+  calendar.value = cal
+  // 检查非全天事件的日期是否跨天
+  if (!rest.allDay && rest.start && rest.end) {
+    const startDate = new Date(rest.start)
+    const endDate = new Date(rest.end)
+    if (!isSameDay(startDate, endDate)) {
+      // 如果跨天，将结束时间设置为开始时间的当天23:59
+      rest.end = `${rest.start.split(' ')[0]} 23:59`
+    }
+  }
+  Object.assign(eventForm, rest)
+}
+
 const showDialog = async (data = null) => {
   // 重置表单
   resetForm()
 
-  if (data && data.id) {
-    // 有 id 说明是编辑现有事件
-    isNew.value = false
-    const { calendar: cal, ...rest } = data
-    calendar.value = cal
-    // 检查非全天事件的日期是否跨天
-    if (!rest.allDay && rest.start && rest.end) {
-      const startDate = new Date(rest.start)
-      const endDate = new Date(rest.end)
-      if (!isSameDay(startDate, endDate)) {
-        // 如果跨天，将结束时间设置为开始时间的当天23:59
-        rest.end = `${rest.start.split(' ')[0]} 23:59`
-      }
-    }
-    Object.assign(eventForm, rest)
-  } else {
-    // 没有 id 说明是新建事件
+  if (!data) {
     isNew.value = true
-    if (data) {
-      // 如果传入了初始数据（如开始时间、结束时间等），则使用这些数据
-      const { calendar: cal, ...rest } = data
-      calendar.value = cal
-      console.log('inDialog', rest)
-      if (!rest.allDay && rest.start && rest.end) {
-        const startDate = new Date(rest.start)
-        const endDate = new Date(rest.end)
-        if (!isSameDay(startDate, endDate)) {
-          rest.end = `${rest.start.split(' ')[0]} 23:59`
-        }
-      }
-      Object.assign(eventForm, rest)
-    }
+    dialogVisible.value = true
+    return
   }
+
+  isNew.value = !data.id
+  const processedData = processEventData(data)
+  Object.assign(eventForm, processedData)
   dialogVisible.value = true
 }
 
