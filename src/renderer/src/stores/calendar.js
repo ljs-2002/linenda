@@ -20,7 +20,9 @@ export const useCalendarStore = defineStore('calendar', () => {
   }
 
   const updateEvents = (newEvents) => {
-    events.value = newEvents
+    events.value = newEvents.map((event) => {
+      return event.toPlainObject()
+    })
   }
 
   return {

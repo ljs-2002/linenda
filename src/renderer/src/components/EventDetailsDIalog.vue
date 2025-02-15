@@ -2,8 +2,8 @@
   <el-dialog v-model="visible" :title="'事件详情'" width="30%" @closed="handleClose">
     <div class="event-details">
       <p><strong>标题：</strong>{{ event?.title }}</p>
-      <p><strong>开始时间：</strong>{{ event?.start }}</p>
-      <p><strong>结束时间：</strong>{{ event?.end }}</p>
+      <p><strong>开始时间：</strong>{{ formatDateTime(event?.start) }}</p>
+      <p><strong>结束时间：</strong>{{ formatDateTime(event?.end) }}</p>
       <p><strong>全天事件：</strong>{{ event?.allDay ? '是' : '否' }}</p>
       <p v-if="event?.url"><strong>链接：</strong>{{ event?.url }}</p>
       <p v-if="event?.extendedProps.description">
@@ -31,26 +31,24 @@ const visible = ref(false)
 const event = ref(null)
 const eventDialogRef = ref(null)
 
-const formatDateTime = (date, isAllDay = false) => {
-  const d = new Date(date)
-  return d.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    ...(isAllDay
-      ? {}
-      : {
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-  })
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return ''
+  const date = new Date(dateTime)
+  return date
+    .toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+    .replace(/\//g, '-')
 }
 
 const showDialog = (eventData) => {
   event.value = {
-    ...eventData,
-    start: formatDateTime(eventData.start, eventData.allDay),
-    end: formatDateTime(eventData.end, eventData.allDay)
+    ...eventData
   }
   visible.value = true
 }
@@ -58,6 +56,7 @@ const showDialog = (eventData) => {
 const handleEdit = () => {
   visible.value = false
   const { extendedProps, ...eventData } = event.value
+  console.log('Details2Dialog', eventData)
   eventDialogRef.value?.showDialog({
     ...eventData,
     ...extendedProps

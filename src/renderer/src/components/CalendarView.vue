@@ -21,7 +21,6 @@ import listPlugin from '@fullcalendar/list'
 import EventDialog from './EventDialog.vue'
 import EventDetailsDialog from './EventDetailsDialog.vue'
 import { useCalendarStore } from '../stores/calendar'
-
 const calendarStore = useCalendarStore()
 const eventDialogRef = ref(null)
 const eventDetailsDialogRef = ref(null)
@@ -56,17 +55,22 @@ const handleEventSave = async (eventData) => {
     ...eventDetails,
     id: Date.now().toString() // 简单的ID生成
   }
+  console.log('add', newEvent)
   calendar.addEvent(newEvent)
+  const addedEvent = calendar.getEventById(newEvent.id)
+  console.log('addedEvent', addedEvent.toPlainObject())
   newEvent.allDay = Number(newEvent.allDay) // 转换 Boolean 为 INTEGER
   await window.electron.ipcRenderer.invoke('add-event', newEvent)
 }
 
 const handleEventSet = (events) => {
   calendarStore.updateEvents(events)
+  console.log('in handleEventSet, events', events)
+  console.log('in handleEventSet, calendarStore.events', calendarStore.events)
 }
 
 const handleEventClick = async (clickInfo) => {
-  console.log(clickInfo.event)
+  console.log(clickInfo.event.toPlainObject())
 
   eventDetailsDialogRef.value?.showDialog({
     ...clickInfo.event.toPlainObject(),
@@ -76,19 +80,25 @@ const handleEventClick = async (clickInfo) => {
 
 const handleEventUpdate = async (eventData) => {
   const { calendar, ...eventDetails } = eventData
+  console.log('eventDetails', eventDetails)
   // 更新日历显示
   const event = calendar.getEventById(eventDetails.id)
+  console.log('old event', event.toPlainObject())
   if (event) {
     event.setProp('title', eventDetails.title)
-    event.setStart(eventDetails.start)
-    event.setEnd(eventDetails.end)
-    event.setAllDay(eventDetails.allDay)
+    console.log('old event after set title', event.toPlainObject())
+    event.setDates(eventDetails.start, eventDetails.end, { allDay: eventDetails.allDay })
+    console.log('old event after set dates', event.toPlainObject())
     event.setExtendedProp('description', eventDetails.description)
   }
+  console.log('event', event.toPlainObject())
+  console.log('all event', calendar.getEvents())
   // 更新数据库
   try {
     await window.electron.ipcRenderer.invoke('update-event', {
       ...eventDetails,
+      start: event.toPlainObject().start,
+      end: event.toPlainObject().end,
       allDay: Number(eventDetails.allDay)
     })
   } catch (error) {
@@ -104,7 +114,7 @@ const handleEventDelete = async (eventData) => {
   }
 }
 
-const calendarOptions = ref({
+const calendarOptions = {
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
   initialView: 'dayGridMonth',
   headerToolbar: {
@@ -127,7 +137,7 @@ const calendarOptions = ref({
   // eventChange
   // eventAdd
   // eventRemove
-})
+}
 </script>
 
 <style>

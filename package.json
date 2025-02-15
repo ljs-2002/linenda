@@ -1,6 +1,6 @@
 {
   "name": "linenda",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "An agenda app, easy to use, free",
   "main": "./out/main/index.js",
   "author": "Lin Jiasheng",
@@ -8,7 +8,7 @@
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "start": "electron-vite preview",
-    "dev": "nodemon --watch src/renderer/src --watch src/main -e js,ts,vue,css,html --ignore dist/ --exec \"prettier --write . && electron-vite dev\"",
+    "dev": "nodemon --watch src/renderer/src --watch src/main -e js,ts,vue,css,html --ignore dist/ --exec \"prettier --write . && electron-vite dev\" --signal SIGTERM",
     "build": "electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
