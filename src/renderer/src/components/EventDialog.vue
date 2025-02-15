@@ -1,6 +1,6 @@
 <template>
   <el-dialog v-model="dialogVisible" :title="isNew ? '新建事件' : '编辑事件'" width="500px">
-    <el-form :model="eventForm" :rules="rules" ref="formRef" label-width="100px">
+    <el-form ref="formRef" :model="eventForm" :rules="rules" label-width="100px">
       <!-- 基本配置 -->
       <el-form-item label="标题" prop="title">
         <el-input v-model="eventForm.title" placeholder="请输入事件标题"></el-input>

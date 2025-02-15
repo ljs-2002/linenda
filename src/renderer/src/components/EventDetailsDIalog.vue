@@ -64,7 +64,7 @@ const handleEdit = () => {
 }
 
 const handleSave = (updatedEvent) => {
-  emit('save', updatedEvent)
+  emit('update', updatedEvent)
 }
 
 const handleDelete = async () => {
@@ -91,7 +91,7 @@ defineExpose({
   showDialog
 })
 
-const emit = defineEmits(['save', 'delete'])
+const emit = defineEmits(['update', 'delete'])
 </script>
 
 <style scoped>
