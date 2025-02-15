@@ -38,11 +38,9 @@ const saveEvent = async (eventData) => {
   const { calendar, ...eventDetails } = eventData
   const newEvent = {
     ...eventDetails,
-    id: Date.now().toString() // 简单的ID生成
+    id: Date.now().toString()
   }
   calendar.addEvent(newEvent)
-  newEvent.allDay = Number(newEvent.allDay) // 转换 Boolean 为 INTEGER
-  await window.electron.ipcRenderer.invoke('add-event', newEvent)
 }
 
 const updateEvent = async (eventData) => {
@@ -54,24 +52,12 @@ const updateEvent = async (eventData) => {
     event.setDates(eventDetails.start, eventDetails.end, { allDay: eventDetails.allDay })
     event.setExtendedProp('description', eventDetails.description)
   }
-  // 更新数据库
-  try {
-    await window.electron.ipcRenderer.invoke('update-event', {
-      ...eventDetails,
-      start: event.toPlainObject().start,
-      end: event.toPlainObject().end,
-      allDay: Number(eventDetails.allDay)
-    })
-  } catch (error) {
-    console.error('更新事件失败', error)
-  }
 }
 
 const deleteEvent = async (eventData) => {
   const event = eventData.calendar.getEventById(eventData.id)
   if (event) {
     event.remove()
-    await window.electron.ipcRenderer.invoke('delete-event', eventData.id)
   }
 }
 
@@ -93,7 +79,7 @@ const handleDateSelect = (selectInfo) => {
 }
 
 const handleEventSet = (events) => {
-  calendarStore.updateEvents(events)
+  calendarStore.setEvents(events)
 }
 
 const handleEventClick = async (clickInfo) => {
@@ -103,6 +89,18 @@ const handleEventClick = async (clickInfo) => {
     ...clickInfo.event.toPlainObject(),
     calendar: clickInfo.view.calendar
   })
+}
+
+const handleEventAdd = async (addInfo) => {
+  await calendarStore.addEvent(addInfo.event)
+}
+
+const handleEventRemove = async (deleteInfo) => {
+  await calendarStore.removeEvent(deleteInfo.event)
+}
+
+const handleEventChange = async (changeInfo) => {
+  await calendarStore.changeEvent(changeInfo.event)
 }
 
 const calendarOptions = {
@@ -124,10 +122,10 @@ const calendarOptions = {
   events: calendarStore.events,
   select: handleDateSelect,
   eventsSet: handleEventSet,
-  eventClick: handleEventClick
-  // eventChange
-  // eventAdd
-  // eventRemove
+  eventClick: handleEventClick,
+  eventAdd: handleEventAdd,
+  eventRemove: handleEventRemove,
+  eventChange: handleEventChange
 }
 </script>
 

@@ -184,7 +184,8 @@ const resetForm = () => {
     end: '',
     allDay: false,
     url: '',
-    description: ''
+    description: '',
+    backgroundColor: 'red'
   })
   firstSelectedField.value = null
 }

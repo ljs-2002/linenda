@@ -1,11 +1,36 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+const transformEvent = (event) => {
+  const { extendedProps, ...rest } = event.toPlainObject()
+  console.log('event', event.toPlainObject())
+  return {
+    ...rest,
+    ...extendedProps,
+    allDay: Number(event.allDay),
+    className: event.classNames.join(',')
+  }
+}
+
 export const useCalendarStore = defineStore('calendar', () => {
   const events = ref([])
 
-  const addEvent = (event) => {
-    events.value.push(event)
+  const addEvent = async (event) => {
+    const newEvent = transformEvent(event)
+    await window.electron.ipcRenderer.invoke('add-event', newEvent)
+  }
+
+  const removeEvent = async (event) => {
+    await window.electron.ipcRenderer.invoke('delete-event', event.id)
+  }
+
+  const changeEvent = async (event) => {
+    try {
+      const eventDetails = transformEvent(event)
+      await window.electron.ipcRenderer.invoke('update-event', eventDetails)
+    } catch (error) {
+      console.error('更新事件失败', error)
+    }
   }
 
   // 初始化加载所有事件
@@ -19,7 +44,7 @@ export const useCalendarStore = defineStore('calendar', () => {
     }))
   }
 
-  const updateEvents = (newEvents) => {
+  const setEvents = (newEvents) => {
     events.value = newEvents.map((event) => {
       return event.toPlainObject()
     })
@@ -28,7 +53,9 @@ export const useCalendarStore = defineStore('calendar', () => {
   return {
     events,
     addEvent,
-    updateEvents,
+    removeEvent,
+    changeEvent,
+    setEvents,
     initializeEvents
   }
 })
