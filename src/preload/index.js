@@ -6,7 +6,8 @@ const api = {
   onWindowStateChanged: (callback) => {
     ipcRenderer.on('window-state-changed', (_, state) => callback(state))
   },
-  windowControl: (action) => ipcRenderer.invoke('window:control', action)
+  windowControl: (action) => ipcRenderer.invoke('window:control', action),
+  getPlatform: () => ipcRenderer.invoke('get-platform')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -24,10 +24,10 @@ const isMaximized = ref(false)
 // 初始化
 onMounted(async () => {
   // 获取平台信息
-  isMac.value = await window.electron.getPlatform()
+  isMac.value = await window.api.getPlatform()
 
   // 监听窗口状态变化
-  window.electron.onWindowStateChanged((state) => {
+  window.api.onWindowStateChanged((state) => {
     isMaximized.value = state.isMaximized
   })
 })
