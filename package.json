@@ -1,6 +1,6 @@
 {
   "name": "linenda",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "An agenda app, easy to use, free",
   "main": "./out/main/index.js",
   "author": "Lin Jiasheng",
@@ -19,6 +19,10 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
+    "@element-plus/icons-vue": "^2.3.1",
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/vue-fontawesome": "^3.0.8",
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
     "@fullcalendar/interaction": "^6.1.15",

@@ -1,7 +1,18 @@
 <template>
   <el-dialog v-model="visible" :title="'事件详情'" width="30%" @closed="handleClose">
     <div class="event-details">
-      <p><strong>标题：</strong>{{ event?.title }}</p>
+      <p v-if="event?.extendedProps?.urgencyTagId" class="title-line">
+        <font-awesome-icon :icon="getIconName(event?.extendedProps?.urgencyTagId, urgencyTags)" />
+        <strong>{{ event?.title }}</strong>
+      </p>
+      <p v-if="event?.extendedProps?.typeTagIds?.length" class="type-tags">
+        <font-awesome-icon
+          v-for="id in event.extendedProps.typeTagIds"
+          :key="id"
+          :icon="getIconName(id, typeTags)"
+          :style="{ marginRight: '8px' }"
+        />
+      </p>
       <p><strong>开始时间：</strong>{{ formatDateTime(event?.start) }}</p>
       <p><strong>结束时间：</strong>{{ formatDateTime(event?.end) }}</p>
       <p><strong>全天事件：</strong>{{ event?.allDay ? '是' : '否' }}</p>
@@ -23,13 +34,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import EventDialog from './EventDialog.vue'
 import { ElMessageBox } from 'element-plus'
 
 const visible = ref(false)
 const event = ref(null)
 const eventDialogRef = ref(null)
+const urgencyTags = ref([])
+const typeTags = ref([])
 
 const formatDateTime = (dateTime) => {
   if (!dateTime) return ''
@@ -56,7 +69,6 @@ const showDialog = (eventData) => {
 const handleEdit = () => {
   visible.value = false
   const { extendedProps, ...eventData } = event.value
-  console.log('Details2Dialog', eventData)
   eventDialogRef.value?.showDialog({
     ...eventData,
     ...extendedProps
@@ -86,6 +98,17 @@ const handleDelete = async () => {
 const handleClose = async () => {
   event.value = null
 }
+
+const getIconName = (id, tags) => {
+  const tag = tags.find((tag) => tag.id === id)
+  return tag ? tag.icon_name : ''
+}
+
+onMounted(async () => {
+  // 加载紧急程度和事件类型标签
+  urgencyTags.value = await window.electron.ipcRenderer.invoke('get-all-urgency-tags')
+  typeTags.value = await window.electron.ipcRenderer.invoke('get-all-type-tags')
+})
 
 defineExpose({
   showDialog

@@ -76,6 +76,26 @@ app.whenReady().then(() => {
     return eventDatabase.getEventsByDateRange(start, end)
   })
 
+  ipcMain.handle('get-all-urgency-tags', () => {
+    return eventDatabase.getAllUrgencyTags()
+  })
+
+  ipcMain.handle('get-all-type-tags', () => {
+    return eventDatabase.getAllTypeTags()
+  })
+
+  ipcMain.handle('get-event-tags', (_, eventId) => {
+    return {
+      urgencyTag: eventDatabase.getEventUrgencyTag(eventId),
+      typeTags: eventDatabase.getEventTypeTags(eventId)
+    }
+  })
+
+  ipcMain.handle('set-event-tags', (_, eventId, tags) => {
+    eventDatabase.setEventUrgencyTag(eventId, tags.urgencyTagId)
+    eventDatabase.setEventTypeTags(eventId, tags.typeTagIds)
+  })
+
   ipcMain.handle('get-platform', () => process.platform)
 
   createWindow()

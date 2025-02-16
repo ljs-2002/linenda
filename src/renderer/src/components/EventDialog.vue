@@ -5,6 +5,27 @@
       <el-form-item label="标题" prop="title">
         <el-input v-model="eventForm.title" placeholder="请输入事件标题"></el-input>
       </el-form-item>
+      <el-form-item label="紧急程度">
+        <el-select v-model="eventForm.urgencyTagId" placeholder="请选择紧急程度">
+          <el-option
+            v-for="tag in urgencyTags"
+            :key="tag.id"
+            :label="tag.urgency_tag_name"
+            :value="tag.id"
+          >
+            <font-awesome-icon :icon="tag.icon_name" />
+            {{ tag.urgency_tag_name }}
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="事件类型">
+        <el-checkbox-group v-model="eventForm.typeTagIds">
+          <el-checkbox v-for="tag in typeTags" :key="tag.id" :value="tag.id">
+            <font-awesome-icon :icon="tag.icon_name" />
+            {{ tag.type_tag_name }}
+          </el-checkbox>
+        </el-checkbox-group>
+      </el-form-item>
       <el-form-item label="整天事件">
         <el-switch v-model="eventForm.allDay"></el-switch>
       </el-form-item>
@@ -60,12 +81,14 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { watch } from 'vue'
+import { watch, onMounted } from 'vue'
 
 const dialogVisible = ref(false)
 const isNew = ref(true)
 const formRef = ref(null)
 const firstSelectedField = ref(null)
+const urgencyTags = ref([])
+const typeTags = ref([])
 
 const formatDateToLocal = (date) => {
   const d = new Date(date)
@@ -141,7 +164,7 @@ const handleEndChange = () => {
   }
 }
 
-const eventForm = reactive({
+const eventFormTamplate = {
   title: '',
   start: '',
   end: '',
@@ -149,9 +172,15 @@ const eventForm = reactive({
   url: '',
   description: '',
   durationEditable: true,
-  startEditable: true
-})
+  startEditable: true,
+  urgencyTagId: 1,
+  typeTagIds: []
+}
+
+const eventForm = reactive(eventFormTamplate)
 //FIXME: 1. 第一次点击的时候会将当前日期设置为结束日期，但之后正常了
+//FIXME: 2. 当前页面太长时滚动条出现在了整个页面而不是弹窗内部
+//FIXME: 3. 窗口最大化、窗口化时会在右上角显示窗口大小
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
   start: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
@@ -178,14 +207,7 @@ const resetForm = () => {
   if (formRef.value) {
     formRef.value.resetFields()
   }
-  Object.assign(eventForm, {
-    title: '',
-    start: '',
-    end: '',
-    allDay: false,
-    url: '',
-    description: ''
-  })
+  Object.assign(eventForm, eventFormTamplate)
   firstSelectedField.value = null
 }
 
@@ -257,6 +279,12 @@ const showDialog = async (data = null) => {
   Object.assign(eventForm, processedData)
   dialogVisible.value = true
 }
+
+onMounted(async () => {
+  // 加载紧急程度和事件类型标签
+  urgencyTags.value = await window.electron.ipcRenderer.invoke('get-all-urgency-tags')
+  typeTags.value = await window.electron.ipcRenderer.invoke('get-all-type-tags')
+})
 
 defineExpose({
   showDialog

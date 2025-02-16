@@ -51,6 +51,8 @@ const updateEvent = async (eventData) => {
     event.setProp('title', eventDetails.title)
     event.setDates(eventDetails.start, eventDetails.end, { allDay: eventDetails.allDay })
     event.setExtendedProp('description', eventDetails.description)
+    event.setExtendedProp('typeTagIds', eventDetails.typeTagIds)
+    event.setExtendedProp('urgencyTagId', eventDetails.urgencyTagId)
   }
 }
 
