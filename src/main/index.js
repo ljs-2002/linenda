@@ -91,6 +91,10 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.handle('get-events-tags-by-ids', (_, eventIds) => {
+    return eventDatabase.getEventsTagsByIds(eventIds)
+  })
+
   ipcMain.handle('set-event-tags', (_, eventId, tags) => {
     eventDatabase.setEventUrgencyTag(eventId, tags.urgencyTagId)
     eventDatabase.setEventTypeTags(eventId, tags.typeTagIds)

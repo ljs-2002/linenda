@@ -21,7 +21,7 @@
     </perfect-scrollbar>
 
     <!-- 添加过滤器组件 -->
-    <EventFilter v-model="selectedStatus" />
+    <EventFilter v-model="selectedFilters" />
   </div>
 </template>
 
@@ -35,7 +35,11 @@ import 'vue3-perfect-scrollbar/style.css'
 
 const currentTab = ref('week7')
 const events = ref([])
-const selectedStatus = ref([])
+const selectedFilters = ref({
+  status: [],
+  urgencyTags: [],
+  typeTags: []
+})
 
 const tabs = [
   { id: 'week7', name: '近7天' },
@@ -74,8 +78,18 @@ const switchTab = async (tabId) => {
   currentTab.value = tabId
   const { start, end } = getDateRange(tabId)
   const result = await window.electron.ipcRenderer.invoke('get-events-by-date-range', start, end)
-  events.value = result.sort((a, b) => dayjs(b.start).valueOf() - dayjs(a.start).valueOf())
 
+  // 获取所有事件的标签信息
+  const eventIds = result.map((event) => event.id)
+  const tagsResult = await window.electron.ipcRenderer.invoke('get-events-tags-by-ids', eventIds)
+  console.log('eventIds', eventIds, 'tagsResult', tagsResult)
+  events.value = result
+    .map((event) => ({
+      ...event,
+      tags: tagsResult[event.id]
+    }))
+    .sort((a, b) => dayjs(b.start).valueOf() - dayjs(a.start).valueOf())
+  console.log('taskView', events.value)
   // 添加滚动重置
   const container = document.querySelector('.ps')
   if (container) {
@@ -88,13 +102,24 @@ onMounted(() => {
 })
 
 const filteredEvents = computed(() => {
-  if (selectedStatus.value.length === 0) {
+  if (!Object.values(selectedFilters.value).some((arr) => arr.length > 0)) {
     return events.value
   }
 
   return events.value.filter((event) => {
-    const status = getEventStatus(event)
-    return selectedStatus.value.includes(status)
+    const statusMatch =
+      selectedFilters.value.status.length === 0 ||
+      selectedFilters.value.status.includes(getEventStatus(event))
+
+    const urgencyMatch =
+      selectedFilters.value.urgencyTags.length === 0 ||
+      selectedFilters.value.urgencyTags.includes(event.tags?.urgencyTag?.id)
+
+    const typeMatch =
+      selectedFilters.value.typeTags.length === 0 ||
+      event.tags?.typeTags?.some((tag) => selectedFilters.value.typeTags.includes(tag.id))
+
+    return statusMatch && urgencyMatch && typeMatch
   })
 })
 

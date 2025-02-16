@@ -39,7 +39,6 @@ export const useCalendarStore = defineStore('calendar', () => {
     const eventsWithTags = await Promise.all(
       loadedEvents.map(async (event) => {
         const tags = await window.electron.ipcRenderer.invoke('get-event-tags', event.id)
-        console.log(tags)
         return {
           ...event,
           durationEditable: true,

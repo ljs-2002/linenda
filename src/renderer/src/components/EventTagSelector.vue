@@ -5,7 +5,7 @@
       <el-radio-group v-model="selectedUrgencyId" @change="handleUrgencyChange">
         <el-radio v-for="tag in urgencyTags" :key="tag.urgency_tag_id" :label="tag.urgency_tag_id">
           <font-awesome-icon :icon="tag.icon_name" />
-          {{ tag.urgency_tag_name }}
+          {{ tag.tag_name }}
         </el-radio>
       </el-radio-group>
     </div>
@@ -15,7 +15,7 @@
       <el-checkbox-group v-model="selectedTypeIds" @change="handleTypeChange">
         <el-checkbox v-for="tag in typeTags" :key="tag.type_tag_id" :label="tag.type_tag_id">
           <font-awesome-icon :icon="tag.icon_name" />
-          {{ tag.type_tag_name }}
+          {{ tag.tag_name }}
         </el-checkbox>
       </el-checkbox-group>
     </div>

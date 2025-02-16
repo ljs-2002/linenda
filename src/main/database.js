@@ -27,7 +27,7 @@ class EventDatabase {
     const createTypeTagPropTable = `
       CREATE TABLE IF NOT EXISTS type_tag_props (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type_tag_name TEXT NOT NULL,
+        tag_name TEXT NOT NULL,
         icon_name TEXT NOT NULL
       )
     `
@@ -36,7 +36,7 @@ class EventDatabase {
     const createUrgencyTagPropTable = `
       CREATE TABLE IF NOT EXISTS urgency_tag_props (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        urgency_tag_name TEXT NOT NULL,
+        tag_name TEXT NOT NULL,
         icon_name TEXT NOT NULL
       )
     `
@@ -44,7 +44,7 @@ class EventDatabase {
 
     const createEventUrgencyTagTabel = `
       CREATE TABLE IF NOT EXISTS event_urgency_tags (
-        id INTEGER PRIMARY KEY,
+        id TEXT PRIMARY KEY,
         urgency_tag_id INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (id) REFERENCES events(id) ON DELETE CASCADE,
         FOREIGN KEY (urgency_tag_id) REFERENCES urgency_tag_props(id) ON DELETE SET DEFAULT
@@ -54,7 +54,7 @@ class EventDatabase {
 
     const createEventTypeTagTabel = `
       CREATE TABLE IF NOT EXISTS event_type_tags (
-        id INTEGER NOT NULL,
+        id TEXT NOT NULL,
         type_tag_id INTEGER NOT NULL,
         PRIMARY KEY (id, type_tag_id),
         FOREIGN KEY (id) REFERENCES events(id) ON DELETE CASCADE,
@@ -66,7 +66,7 @@ class EventDatabase {
 
   initTagProps() {
     const insertDefaultTypeTags = `
-      INSERT OR IGNORE INTO type_tag_props (id, type_tag_name, icon_name) VALUES
+      INSERT OR IGNORE INTO type_tag_props (id, tag_name, icon_name) VALUES
       (1, '项目', 'project-diagram'),
       (2, '学习', 'book'),
       (3, '学术', 'graduation-cap'),
@@ -75,7 +75,7 @@ class EventDatabase {
     this.db.exec(insertDefaultTypeTags)
 
     const insertDefaultUrgencyTags = `
-      INSERT OR IGNORE INTO urgency_tag_props (id, urgency_tag_name, icon_name) VALUES 
+      INSERT OR IGNORE INTO urgency_tag_props (id, tag_name, icon_name) VALUES 
       (1, '普通', 'circle-info'),
       (2, '注意', 'exclamation'),
       (3, '重要', 'triangle-exclamation')
@@ -232,6 +232,37 @@ class EventDatabase {
       VALUES (?, ?)
     `)
     return stmt.run(eventId, urgencyTagId)
+  }
+
+  getEventsTagsByIds(eventIds) {
+    // 查询事件的紧急程度标签
+    const urgencyTagsStmt = this.db.prepare(`
+      SELECT e.id as event_id, u.* 
+      FROM urgency_tag_props u
+      JOIN event_urgency_tags e ON u.id = e.urgency_tag_id
+      WHERE e.id IN (${eventIds.map(() => '?').join(',')})
+    `)
+
+    // 查询事件的类型标签
+    const typeTagsStmt = this.db.prepare(`
+      SELECT e.id as event_id, t.* 
+      FROM type_tag_props t
+      JOIN event_type_tags e ON t.id = e.type_tag_id
+      WHERE e.id IN (${eventIds.map(() => '?').join(',')})
+    `)
+
+    // 执行查询并组织结果
+    const urgencyTagsResult = urgencyTagsStmt.all(eventIds)
+    const typeTagsResult = typeTagsStmt.all(eventIds)
+
+    // 组织返回结果
+    return eventIds.reduce((acc, eventId) => {
+      acc[eventId] = {
+        urgencyTag: urgencyTagsResult.find((tag) => tag.event_id === eventId),
+        typeTags: typeTagsResult.filter((tag) => tag.event_id === eventId)
+      }
+      return acc
+    }, {})
   }
 
   // 设置事件的类型标签

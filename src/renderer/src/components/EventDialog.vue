@@ -7,14 +7,9 @@
       </el-form-item>
       <el-form-item label="紧急程度">
         <el-select v-model="eventForm.urgencyTagId" placeholder="请选择紧急程度">
-          <el-option
-            v-for="tag in urgencyTags"
-            :key="tag.id"
-            :label="tag.urgency_tag_name"
-            :value="tag.id"
-          >
+          <el-option v-for="tag in urgencyTags" :key="tag.id" :label="tag.tag_name" :value="tag.id">
             <font-awesome-icon :icon="tag.icon_name" />
-            {{ tag.urgency_tag_name }}
+            {{ tag.tag_name }}
           </el-option>
         </el-select>
       </el-form-item>
@@ -22,7 +17,7 @@
         <el-checkbox-group v-model="eventForm.typeTagIds">
           <el-checkbox v-for="tag in typeTags" :key="tag.id" :value="tag.id">
             <font-awesome-icon :icon="tag.icon_name" />
-            {{ tag.type_tag_name }}
+            {{ tag.tag_name }}
           </el-checkbox>
         </el-checkbox-group>
       </el-form-item>

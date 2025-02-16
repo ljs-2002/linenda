@@ -1,10 +1,31 @@
 <template>
   <div class="event-card">
     <div class="event-header">
-      <h3 class="event-title">{{ event.title }}</h3>
+      <div class="title-line">
+        <font-awesome-icon
+          v-if="event.tags?.urgencyTag"
+          :icon="event.tags.urgencyTag.icon_name"
+          :title="event.tags.urgencyTag.tag_name"
+          :style="{
+            marginRight: '10px',
+            color: getUrgencyColor(event.tags.urgencyTag.id),
+            fontSize: '22px'
+          }"
+        />
+        <h3 class="event-title">{{ event.title }}</h3>
+      </div>
       <div :class="['event-status', status.class]">
         {{ status.text }}
       </div>
+    </div>
+    <div v-if="event.tags?.typeTags?.length" class="type-tags">
+      <font-awesome-icon
+        v-for="tag in event.tags.typeTags"
+        :key="tag.id"
+        :title="tag.tag_name"
+        :icon="tag.icon_name"
+        :style="{ marginRight: '8px', color: '#666', fontSize: '1.2em' }"
+      />
     </div>
     <div class="event-time">
       <div class="time-container">
@@ -30,6 +51,7 @@
 <script setup>
 import { computed } from 'vue'
 import dayjs from 'dayjs'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 const props = defineProps({
   event: {
@@ -67,6 +89,15 @@ const getEventStatus = (event) => {
     return { text: '进行中', class: 'status-ongoing' }
   }
 }
+
+const getUrgencyColor = (urgencyId) => {
+  const colors = {
+    1: '#909399', // 普通 - 灰色
+    2: '#E6A23C', // 注意 - 黄色
+    3: '#F56C6C' // 重要 - 红色
+  }
+  return colors[urgencyId] || colors[1]
+}
 </script>
 
 <style scoped>
@@ -80,6 +111,18 @@ const getEventStatus = (event) => {
   box-sizing: border-box;
   margin: 0;
   user-select: text;
+}
+.title-line {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.type-tags {
+  margin: -4px 0 4px 0;
+  display: flex;
+  align-items: center;
+  font-size: 18px; /* 增加基础字体大小 */
 }
 
 .event-header {

@@ -4,7 +4,7 @@
     <div class="filter-ball" :class="{ active: isOpen }" @click.stop="toggleFilter">
       <img src="../assets/filter.svg" alt="filter" />
       <!-- 添加小红点 -->
-      <div v-if="!isOpen && selectedStatus.length > 0" class="indicator"></div>
+      <div v-if="!isOpen && hasActiveFilters" class="indicator"></div>
     </div>
 
     <!-- 过滤面板 -->
@@ -13,29 +13,21 @@
         <div class="filter-header">
           <h3>
             筛选条件
-            <span v-if="selectedStatus.length > 0" class="clear-btn" @click="clearFilters"
-              >清除</span
-            >
+            <span v-if="hasActiveFilters" class="clear-btn" @click="clearFilters">清除</span>
           </h3>
           <div class="header-actions">
             <span class="close-btn" @click="toggleFilter">&times;</span>
           </div>
         </div>
         <div class="filter-content">
-          <div class="filter-section">
-            <h4>状态</h4>
-            <div class="checkbox-group">
-              <label v-for="status in statusOptions" :key="status.value">
-                <input
-                  v-model="selectedStatus"
-                  type="checkbox"
-                  :value="status.value"
-                  @change="emitChange"
-                />
-                <span>{{ status.label }}</span>
-              </label>
-            </div>
-          </div>
+          <FilterSection
+            v-for="section in filterSections"
+            :key="section.id"
+            v-model="selectedFilters[section.id]"
+            :title="section.title"
+            :options="section.options"
+            @update:model-value="handleFilterChange(section.id, $event)"
+          />
         </div>
       </div>
     </transition>
@@ -43,44 +35,74 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-//TODO: 将filter-content部分做成类似组件可以直接循环插入相关内容
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import FilterSection from './FilterSection.vue'
+//TODO: 将当前组件做的更通用，filterSections和对应的onMounted中数据初始化由父组件传入
+//TODO: filterSection应当也有一个清空按钮
 const props = defineProps({
   modelValue: {
-    type: Array,
-    default: () => []
+    type: Object,
+    default: () => ({
+      status: [],
+      urgencyTags: [],
+      typeTags: []
+    })
   }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 const isOpen = ref(false)
-const selectedStatus = ref(props.modelValue)
+const selectedFilters = ref(props.modelValue)
+const hasActiveFilters = computed(() => {
+  return Object.values(selectedFilters.value).some((filters) => filters.length > 0)
+})
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    selectedFilters.value = newValue
+  },
+  { deep: true }
+)
 
-const statusOptions = [
-  { label: '未开始', value: 'pending' },
-  { label: '进行中', value: 'ongoing' },
-  { label: '已完成', value: 'completed' }
-]
+const filterSections = ref([
+  {
+    id: 'status',
+    title: '状态',
+    options: [
+      { label: '未开始', value: 'pending' },
+      { label: '进行中', value: 'ongoing' },
+      { label: '已完成', value: 'completed' }
+    ]
+  },
+  {
+    id: 'urgencyTags',
+    title: '重要程度',
+    options: [] // 将在 onMounted 中填充
+  },
+  {
+    id: 'typeTags',
+    title: '类型',
+    options: [] // 将在 onMounted 中填充
+  }
+])
 
 const toggleFilter = () => {
   isOpen.value = !isOpen.value
 }
 
-const emitChange = () => {
-  emit('update:modelValue', selectedStatus.value)
+const handleFilterChange = (sectionId, value) => {
+  selectedFilters.value[sectionId] = value
+  emit('update:modelValue', selectedFilters.value)
 }
 
-watch(
-  () => props.modelValue,
-  (newVal) => {
-    selectedStatus.value = newVal
-  }
-)
-// 添加清除过滤器的方法
 const clearFilters = () => {
-  selectedStatus.value = []
-  emitChange()
+  selectedFilters.value = {
+    status: [],
+    urgencyTags: [],
+    typeTags: []
+  }
+  emit('update:modelValue', selectedFilters.value)
 }
 
 // 添加点击外部关闭的处理函数
@@ -93,6 +115,30 @@ const handleClickOutside = () => {
 // 组件挂载时添加点击事件监听
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+})
+
+onMounted(async () => {
+  // 获取标签数据
+  const urgencyTags = await window.electron.ipcRenderer.invoke('get-all-urgency-tags')
+  const typeTags = await window.electron.ipcRenderer.invoke('get-all-type-tags')
+
+  // 更新选项
+  filterSections.value = filterSections.value.map((section) => {
+    if (section.id === 'urgencyTags') {
+      section.options = urgencyTags.map((tag) => ({
+        label: tag.urgency_tag_name,
+        value: tag.id,
+        icon: tag.icon_name
+      }))
+    } else if (section.id === 'typeTags') {
+      section.options = typeTags.map((tag) => ({
+        label: tag.type_tag_name,
+        value: tag.id,
+        icon: tag.icon_name
+      }))
+    }
+    return section
+  })
 })
 
 // 组件卸载时移除点击事件监听
