@@ -17,8 +17,8 @@
           :style="{ marginRight: '8px' }"
         />
       </p>
-      <p><strong>开始时间：</strong>{{ formatDateTime(event?.start) }}</p>
-      <p><strong>结束时间：</strong>{{ formatDateTime(event?.end) }}</p>
+      <p><strong>开始时间：</strong>{{ formatDateTime(event?.start, event?.allDay) }}</p>
+      <p><strong>结束时间：</strong>{{ formatDateTime(event?.end, event?.allDay) }}</p>
       <p><strong>全天事件：</strong>{{ event?.allDay ? '是' : '否' }}</p>
       <p v-if="event?.url"><strong>链接：</strong>{{ event?.url }}</p>
       <p v-if="event?.extendedProps.description">
@@ -48,19 +48,22 @@ const eventDialogRef = ref(null)
 const urgencyTags = ref([])
 const typeTags = ref([])
 
-const formatDateTime = (dateTime) => {
+const formatDateTime = (dateTime, isAllDay = false) => {
   if (!dateTime) return ''
   const date = new Date(dateTime)
-  return date
-    .toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    })
-    .replace(/\//g, '-')
+  const options = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    ...(isAllDay
+      ? {}
+      : {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        })
+  }
+  return date.toLocaleString('zh-CN', options).replace(/\//g, '-')
 }
 
 const showDialog = (eventData) => {
