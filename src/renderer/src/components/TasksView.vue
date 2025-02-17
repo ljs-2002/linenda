@@ -47,8 +47,8 @@
             placeholder="开始日期"
             :disabled-date="disabledStartDate"
             value-format="YYYY-MM-DD"
-            :popper-options="{ strategy: 'fixed' }"
             @change="handleStartDateChange"
+            :popper-options="{ strategy: 'fixed' }"
           />
         </el-form-item>
         <el-form-item class="compact-form-item">
@@ -58,8 +58,8 @@
             placeholder="结束日期"
             :disabled-date="disabledEndDate"
             value-format="YYYY-MM-DD"
-            :popper-options="{ strategy: 'fixed' }"
             @change="handleEndDateChange"
+            :popper-options="{ strategy: 'fixed' }"
           />
         </el-form-item>
       </el-form>
