@@ -41,6 +41,7 @@ export const useCalendarStore = defineStore('calendar', () => {
         const tags = await window.electron.ipcRenderer.invoke('get-event-tags', event.id)
         return {
           ...event,
+          color: tags.urgencyTag?.color,
           durationEditable: true,
           startEditable: true,
           allDay: Boolean(event.allDay),

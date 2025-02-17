@@ -49,6 +49,7 @@ const updateEvent = async (eventData) => {
   const event = calendar.getEventById(eventDetails.id)
   if (event) {
     event.setProp('title', eventDetails.title)
+    event.setProp('color', eventDetails.color)
     event.setDates(eventDetails.start, eventDetails.end, { allDay: eventDetails.allDay })
     event.setExtendedProp('description', eventDetails.description)
     event.setExtendedProp('typeTagIds', eventDetails.typeTagIds)

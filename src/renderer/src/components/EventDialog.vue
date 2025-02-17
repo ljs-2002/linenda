@@ -206,7 +206,8 @@ const handleSubmit = async () => {
 
   try {
     await formRef.value.validate()
-    emit('save', { ...eventForm, calendar: calendar.value })
+    const color = getSelectedTag(eventForm.urgencyTagId).color
+    emit('save', { ...eventForm, color: color, calendar: calendar.value })
     dialogVisible.value = false
     resetForm()
   } catch (error) {
