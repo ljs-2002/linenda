@@ -26,6 +26,44 @@
       :sections="filterSections"
       :init-sections="initFilterSections"
     />
+
+    <!-- 添加日期选择对话框 -->
+    <el-dialog
+      v-model="dateDialogVisible"
+      title="自定义时间范围"
+      width="240px"
+      :modal="false"
+      :close-on-click-modal="true"
+      :draggable="true"
+      destroy-on-close
+      class="custom-dialog date-range-dialog"
+      :append-to-body="true"
+    >
+      <el-form class="date-range-form" size="default">
+        <el-form-item class="compact-form-item">
+          <el-date-picker
+            v-model="startDate"
+            type="date"
+            placeholder="开始日期"
+            :disabled-date="disabledStartDate"
+            value-format="YYYY-MM-DD"
+            :popper-options="{ strategy: 'fixed' }"
+            @change="handleStartDateChange"
+          />
+        </el-form-item>
+        <el-form-item class="compact-form-item">
+          <el-date-picker
+            v-model="endDate"
+            type="date"
+            placeholder="结束日期"
+            :disabled-date="disabledEndDate"
+            value-format="YYYY-MM-DD"
+            :popper-options="{ strategy: 'fixed' }"
+            @change="handleEndDateChange"
+          />
+        </el-form-item>
+      </el-form>
+    </el-dialog>
   </div>
 </template>
 
@@ -36,9 +74,21 @@ import EventCard from './EventCard.vue'
 import EventFilter from './EventFilter.vue'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import 'vue3-perfect-scrollbar/style.css'
+import { ElDatePicker, ElDialog } from 'element-plus'
+import 'element-plus/dist/index.css'
 
-const currentTab = ref('week7')
+const currentTab = ref('today')
 const events = ref([])
+
+const dateDialogVisible = ref(false)
+const startDate = ref('')
+const endDate = ref('')
+
+const cachedCustomDates = ref({
+  start: '',
+  end: ''
+})
+
 const selectedFilters = ref({
   status: [],
   urgencyTags: [],
@@ -46,10 +96,13 @@ const selectedFilters = ref({
 })
 
 const tabs = [
+  { id: 'today', name: '今天' },
   { id: 'week7', name: '近7天' },
   { id: 'thisWeek', name: '本周' },
   { id: 'thisMonth', name: '本月' },
-  { id: 'thisYear', name: '本年' }
+  { id: 'thisYear', name: '本年' },
+  { id: 'custom', name: '自定义' },
+  { id: 'all', name: '全部' }
 ]
 
 const filterSections = ref([
@@ -77,9 +130,14 @@ const filterSections = ref([
 const getDateRange = (tabId) => {
   const today = dayjs()
   switch (tabId) {
+    case 'today':
+      return {
+        start: today.format('YYYY-MM-DD'),
+        end: today.format('YYYY-MM-DD')
+      }
     case 'week7':
       return {
-        start: today.subtract(7, 'day').format('YYYY-MM-DD'),
+        start: today.subtract(6, 'day').format('YYYY-MM-DD'),
         end: today.format('YYYY-MM-DD')
       }
     case 'thisWeek':
@@ -100,12 +158,7 @@ const getDateRange = (tabId) => {
   }
 }
 
-const switchTab = async (tabId) => {
-  currentTab.value = tabId
-  const { start, end } = getDateRange(tabId)
-  const result = await window.electron.ipcRenderer.invoke('get-events-by-date-range', start, end)
-
-  // 获取所有事件的标签信息
+const setEvents = async (result) => {
   const eventIds = result.map((event) => event.id)
   const tagsResult = await window.electron.ipcRenderer.invoke('get-events-tags-by-ids', eventIds)
   events.value = result
@@ -121,8 +174,100 @@ const switchTab = async (tabId) => {
   }
 }
 
+const switchTab = async (tabId) => {
+  if (tabId === 'custom') {
+    if (currentTab.value === 'custom') {
+      // 如果当前已经是 custom，只显示对话框
+      dateDialogVisible.value = true
+      return
+    }
+    // 更新当前标签
+    currentTab.value = tabId
+
+    // 如果有缓存的日期，使用缓存的日期查询
+    if (cachedCustomDates.value.start || cachedCustomDates.value.end) {
+      startDate.value = cachedCustomDates.value.start
+      endDate.value = cachedCustomDates.value.end
+      const result = await window.electron.ipcRenderer.invoke(
+        'get-events-by-date-range',
+        startDate.value,
+        endDate.value
+      )
+      await setEvents(result)
+    } else {
+      events.value = []
+    }
+
+    // 显示日期选择对话框
+    dateDialogVisible.value = true
+    return
+  }
+  currentTab.value = tabId
+  let result
+  if (tabId === 'all') {
+    result = await window.electron.ipcRenderer.invoke('get-all-events')
+    events.value = result.sort((a, b) => dayjs(b.start).valueOf() - dayjs(a.start).valueOf())
+  } else {
+    const { start, end } = getDateRange(tabId)
+    console.log(start, end)
+    result = await window.electron.ipcRenderer.invoke('get-events-by-date-range', start, end)
+  }
+
+  // 获取所有事件的标签信息
+  await setEvents(result)
+}
+
+// 日期限制函数
+const disabledStartDate = (time) => {
+  if (!endDate.value) return false
+  return dayjs(time).isAfter(endDate.value)
+}
+
+const disabledEndDate = (time) => {
+  if (!startDate.value) return false
+  return dayjs(time).isBefore(startDate.value)
+}
+
+const handleStartDateChange = async (date) => {
+  cachedCustomDates.value.start = date
+  if (!date && endDate.value) {
+    const result = await window.electron.ipcRenderer.invoke(
+      'get-events-by-date-range',
+      null,
+      endDate.value
+    )
+    await setEvents(result)
+  } else if (date && endDate.value) {
+    const result = await window.electron.ipcRenderer.invoke(
+      'get-events-by-date-range',
+      date,
+      endDate.value
+    )
+    await setEvents(result)
+  }
+}
+
+const handleEndDateChange = async (date) => {
+  cachedCustomDates.value.end = date
+  if (!date && startDate.value) {
+    const result = await window.electron.ipcRenderer.invoke(
+      'get-events-by-date-range',
+      startDate.value,
+      null
+    )
+    await setEvents(result)
+  } else if (startDate.value && date) {
+    const result = await window.electron.ipcRenderer.invoke(
+      'get-events-by-date-range',
+      startDate.value,
+      date
+    )
+    await setEvents(result)
+  }
+}
+
 onMounted(() => {
-  switchTab('week7')
+  switchTab('today')
 })
 
 // 初始化过滤器部分函数
@@ -188,7 +333,7 @@ const getEventStatus = (event) => {
 }
 </script>
 
-<style>
+<style scoped>
 .tasks-view {
   display: flex;
   height: 100%;
@@ -221,6 +366,7 @@ const getEventStatus = (event) => {
 
 .events-container {
   flex: 1;
+  z-index: 1;
   padding: 20px;
   min-width: 0; /* 防止flex子项超出容器 */
   box-sizing: border-box; /* 添加这行确保padding计入总宽度 */
@@ -240,5 +386,95 @@ const getEventStatus = (event) => {
   gap: 16px;
   box-sizing: border-box; /* 添加这行确保宽度计算包含padding和border */
   min-height: 100%; /* 确保内容区域至少占满容器高度 */
+}
+
+.date-range-dialog .el-dialog {
+  border-radius: 8px;
+  overflow: visible;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  position: fixed !important;
+  top: 200px !important;
+  left: 40px !important;
+  transform: none !important;
+  background: #ffffff;
+  width: 220px !important;
+  z-index: 2001;
+}
+
+.date-range-dialog .el-dialog__header {
+  background-color: #ffffff;
+  padding: 12px 15px 8px;
+  margin: 0;
+  border-bottom: 1px solid #ebeef5;
+  cursor: move;
+}
+
+.date-range-dialog .el-dialog__title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.5;
+}
+
+.date-range-dialog .el-dialog__body {
+  padding: 12px;
+  background-color: #ffffff;
+}
+
+.date-range-dialog .el-dialog__headerbtn {
+  top: 11px;
+  right: 12px;
+}
+
+.date-range-form {
+  margin: 0;
+}
+
+.date-range-form .el-form-item.compact-form-item {
+  margin-bottom: 8px;
+}
+
+.date-range-form .el-form-item:last-child {
+  margin-bottom: 0;
+}
+
+.date-range-form .el-date-picker {
+  width: 100%;
+}
+
+.date-range-form .el-input__wrapper {
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+}
+
+.date-range-form .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px #c0c4cc inset;
+}
+
+.date-range-form .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px #07c160 inset;
+}
+
+/* 日期选择器弹出层样式优化 */
+.el-picker-panel {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.el-picker-panel .el-date-picker__header {
+  margin: 4px 0;
+}
+
+.el-picker-panel .el-date-picker__content {
+  padding: 0 8px 8px;
+}
+
+.el-picker-panel .el-date-table th {
+  padding: 4px;
+  font-weight: 400;
+}
+
+.el-picker-panel .el-date-table td {
+  padding: 2px;
 }
 </style>
