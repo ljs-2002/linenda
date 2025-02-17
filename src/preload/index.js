@@ -7,7 +7,10 @@ const api = {
     ipcRenderer.on('window-state-changed', (_, state) => callback(state))
   },
   windowControl: (action) => ipcRenderer.invoke('window:control', action),
-  getPlatform: () => ipcRenderer.invoke('get-platform')
+  getPlatform: () => ipcRenderer.invoke('get-platform'),
+  getDbPath: () => ipcRenderer.invoke('get-db-path'),
+  selectDirectory: () => ipcRenderer.invoke('select-directory'),
+  updateDbPath: (path) => ipcRenderer.invoke('update-db-path', path)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

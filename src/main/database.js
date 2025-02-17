@@ -1,11 +1,59 @@
 import Database from 'better-sqlite3'
 import { join } from 'path'
 import { app } from 'electron'
+import fs from 'fs/promises'
+import yaml from 'js-yaml'
+
+const CONFIG_FILE = join(app.getAppPath(), 'config.yaml')
+
+export async function readConfig() {
+  try {
+    const content = await fs.readFile(CONFIG_FILE, 'utf8')
+    return yaml.load(content)
+  } catch (error) {
+    // 如果配置文件不存在，创建默认配置
+    const defaultConfig = {
+      dbPath: join(app.getAppPath(), 'db')
+    }
+    await fs.writeFile(CONFIG_FILE, yaml.dump(defaultConfig), 'utf8')
+    return defaultConfig
+  }
+}
+
+export async function saveConfig(config) {
+  await fs.writeFile(CONFIG_FILE, yaml.dump(config), 'utf8')
+}
 
 class EventDatabase {
   constructor() {
-    const dbPath = join(app.getPath('userData'), 'calendar.db')
+    if (EventDatabase.instance) {
+      return EventDatabase.instance
+    }
+  }
+
+  static async getInstance() {
+    if (!EventDatabase.instance) {
+      EventDatabase.instance = new EventDatabase()
+      await EventDatabase.instance.initialize()
+    }
+    return EventDatabase.instance
+  }
+
+  async initialize() {
+    const config = await readConfig()
+    // 判断数据库文件夹是否存在，不存在则创建
+    await fs.mkdir(config.dbPath, { recursive: true })
+    const dbPath = join(config.dbPath, 'calendar.db')
     this.db = new Database(dbPath)
+    this.init()
+    this.initTagProps()
+  }
+
+  reinitialize(newPath) {
+    if (this.db) {
+      this.db.close()
+    }
+    this.db = new Database(join(newPath, 'calendar.db'))
     this.init()
     this.initTagProps()
   }
@@ -78,7 +126,7 @@ class EventDatabase {
 
     const insertDefaultUrgencyTags = `
       INSERT OR IGNORE INTO urgency_tag_props (id, tag_name, icon_name, color) VALUES 
-      (1, '普通', 'circle-info', '#909399'),
+      (1, '普通', 'circle-info', '#3788D8'),
       (2, '注意', 'circle-exclamation', '#E6A23C'),
       (3, '重要', 'triangle-exclamation', '#F56C6C')
     `
@@ -288,4 +336,6 @@ class EventDatabase {
   }
 }
 
-export default new EventDatabase()
+EventDatabase._instance = null
+
+export { EventDatabase as default }
