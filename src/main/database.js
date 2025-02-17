@@ -94,9 +94,9 @@ class EventDatabase {
     return stmt.all()
   }
 
-  getEventsByDateRange(start, end = false) {
+  getEventsByDateRange(start, end) {
     // 动态调整 start 和 end 的格式
-    const adjustDate = (date, end) => {
+    const adjustDate = (date, end = false) => {
       if (date.length === 10) {
         // 如果是 yyyy-mm-dd 格式
         if (end) {
@@ -117,7 +117,10 @@ class EventDatabase {
     const adjustedEnd = adjustDate(end, true)
     const stmt = this.db.prepare(`
         SELECT * FROM events
-        WHERE start >= @adjustedStart AND end <= @adjustedEnd
+        WHERE 
+          (start >= @adjustedStart AND start < @adjustedEnd) OR
+          (end > @adjustedStart AND end <= @adjustedEnd) OR
+          (start <= @adjustedStart AND end >= @adjustedEnd)
     `)
 
     return stmt.all({ adjustedStart, adjustedEnd })
