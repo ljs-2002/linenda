@@ -14,10 +14,9 @@
           :value="option.value"
           @change="emitChange"
         />
-        <font-awesome-icon
+        <TagIcon
           v-if="option.icon"
-          :icon="option.icon"
-          :style="{ marginRight: '4px', color: option.color }"
+          :tag="{ icon_name: option.icon, tag_name: option.label, color: option.color }"
         />
         <span>{{ option.label }}</span>
       </label>
@@ -27,7 +26,7 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import TagIcon from './TagIcon.vue'
 
 const props = defineProps({
   title: {

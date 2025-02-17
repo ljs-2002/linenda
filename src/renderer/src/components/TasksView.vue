@@ -133,15 +133,17 @@ const initFilterSections = async () => {
   filterSections.value = filterSections.value.map((section) => {
     if (section.id === 'urgencyTags') {
       section.options = urgencyTags.map((tag) => ({
-        label: tag.urgency_tag_name,
+        label: tag.tag_name,
         value: tag.id,
-        icon: tag.icon_name
+        icon: tag.icon_name,
+        color: tag.color
       }))
     } else if (section.id === 'typeTags') {
       section.options = typeTags.map((tag) => ({
-        label: tag.type_tag_name,
+        label: tag.tag_name,
         value: tag.id,
-        icon: tag.icon_name
+        icon: tag.icon_name,
+        color: tag.color
       }))
     }
     return section

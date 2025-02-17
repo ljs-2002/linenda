@@ -2,19 +2,15 @@
   <el-dialog v-model="visible" :title="'事件详情'" width="30%" @closed="handleClose">
     <div class="event-details">
       <p v-if="event?.extendedProps?.urgencyTagId" class="title-line">
-        <font-awesome-icon
-          :icon="getIconName(event?.extendedProps?.urgencyTagId, urgencyTags)"
-          :title="getTagName(event?.extendedProps?.urgencyTagId, urgencyTags)"
-        />
+        <TagIcon :tag="getTagInfo(event.extendedProps.urgencyTagId, urgencyTags)" />
         <strong>{{ event?.title }}</strong>
       </p>
       <p v-if="event?.extendedProps?.typeTagIds?.length" class="type-tags">
-        <font-awesome-icon
+        <TagIcon
           v-for="id in event.extendedProps.typeTagIds"
           :key="id"
-          :icon="getIconName(id, typeTags)"
-          :title="getTagName(id, typeTags)"
-          :style="{ marginRight: '8px' }"
+          :tag="getTagInfo(id, typeTags)"
+          :style-props="{ marginRight: '8px' }"
         />
       </p>
       <p><strong>开始时间：</strong>{{ formatDateTime(event?.start, event?.allDay) }}</p>
@@ -41,6 +37,7 @@
 import { ref, onMounted } from 'vue'
 import EventDialog from './EventDialog.vue'
 import { ElMessageBox } from 'element-plus'
+import TagIcon from './TagIcon.vue'
 
 const visible = ref(false)
 const event = ref(null)
@@ -106,17 +103,8 @@ const handleClose = async () => {
   event.value = null
 }
 
-const getTagProp = (id, tags, nameField) => {
-  const tag = tags.find((tag) => tag.id === id)
-  return tag ? tag[nameField] : ''
-}
-
-const getIconName = (id, tags) => {
-  return getTagProp(id, tags, 'icon_name')
-}
-
-const getTagName = (id, tags) => {
-  return getTagProp(id, tags, 'tag_name')
+const getTagInfo = (id, tags) => {
+  return tags.find((tag) => tag.id === id) || {}
 }
 
 onMounted(async () => {

@@ -7,16 +7,26 @@
       </el-form-item>
       <el-form-item label="紧急程度">
         <el-select v-model="eventForm.urgencyTagId" placeholder="请选择紧急程度">
-          <el-option v-for="tag in urgencyTags" :key="tag.id" :label="tag.tag_name" :value="tag.id">
-            <font-awesome-icon :icon="tag.icon_name" />
-            {{ tag.tag_name }}
-          </el-option>
+          <template #default>
+            <el-option
+              v-for="tag in urgencyTags"
+              :key="tag.id"
+              :label="tag.tag_name"
+              :value="tag.id"
+            >
+              <TagIcon :tag="tag" :style-props="{ marginRight: '4px' }" />
+              {{ tag.tag_name }}
+            </el-option>
+          </template>
+          <template v-if="getSelectedTag(eventForm.urgencyTagId)" #prefix>
+            <TagIcon :tag="getSelectedTag(eventForm.urgencyTagId)" />
+          </template>
         </el-select>
       </el-form-item>
       <el-form-item label="事件类型">
         <el-checkbox-group v-model="eventForm.typeTagIds">
           <el-checkbox v-for="tag in typeTags" :key="tag.id" :value="tag.id">
-            <font-awesome-icon :icon="tag.icon_name" />
+            <TagIcon :tag="tag" />
             {{ tag.tag_name }}
           </el-checkbox>
         </el-checkbox-group>
@@ -77,6 +87,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { watch, onMounted } from 'vue'
+import TagIcon from './TagIcon.vue'
 
 const dialogVisible = ref(false)
 const isNew = ref(true)
@@ -275,6 +286,10 @@ const showDialog = async (data = null) => {
   dialogVisible.value = true
 }
 
+const getSelectedTag = (id) => {
+  return urgencyTags.value.find((tag) => tag.id === id)
+}
+
 onMounted(async () => {
   // 加载紧急程度和事件类型标签
   urgencyTags.value = await window.electron.ipcRenderer.invoke('get-all-urgency-tags')
@@ -285,3 +300,15 @@ defineExpose({
   showDialog
 })
 </script>
+
+<style>
+.el-select .el-input__prefix {
+  display: flex;
+  align-items: center;
+  left: 8px;
+}
+
+.el-select .el-input__inner {
+  padding-left: 0; /* 为图标留出空间 */
+}
+</style>

@@ -11,7 +11,7 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import {
   faCircleInfo,
-  faExclamation,
+  faCircleExclamation,
   faTriangleExclamation,
   faProjectDiagram,
   faBook,
@@ -21,7 +21,7 @@ import {
 
 library.add(
   faCircleInfo,
-  faExclamation,
+  faCircleExclamation,
   faTriangleExclamation,
   faProjectDiagram,
   faBook,

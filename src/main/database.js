@@ -28,7 +28,8 @@ class EventDatabase {
       CREATE TABLE IF NOT EXISTS type_tag_props (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tag_name TEXT NOT NULL,
-        icon_name TEXT NOT NULL
+        icon_name TEXT NOT NULL,
+        color TEXT DEFAULT '#606266'
       )
     `
     this.db.exec(createTypeTagPropTable)
@@ -37,7 +38,8 @@ class EventDatabase {
       CREATE TABLE IF NOT EXISTS urgency_tag_props (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tag_name TEXT NOT NULL,
-        icon_name TEXT NOT NULL
+        icon_name TEXT NOT NULL,
+        color TEXT DEFAULT '#606266'
       )
     `
     this.db.exec(createUrgencyTagPropTable)
@@ -66,19 +68,19 @@ class EventDatabase {
 
   initTagProps() {
     const insertDefaultTypeTags = `
-      INSERT OR IGNORE INTO type_tag_props (id, tag_name, icon_name) VALUES
-      (1, '项目', 'project-diagram'),
-      (2, '学习', 'book'),
-      (3, '学术', 'graduation-cap'),
-      (4, '娱乐', 'gamepad')
+      INSERT OR IGNORE INTO type_tag_props (id, tag_name, icon_name, color) VALUES
+      (1, '项目', 'project-diagram', '#3498db'),
+      (2, '学习', 'book', '#2ecc71'),
+      (3, '学术', 'graduation-cap', '#9b59b6'),
+      (4, '娱乐', 'gamepad', '#e74c3c')
     `
     this.db.exec(insertDefaultTypeTags)
 
     const insertDefaultUrgencyTags = `
-      INSERT OR IGNORE INTO urgency_tag_props (id, tag_name, icon_name) VALUES 
-      (1, '普通', 'circle-info'),
-      (2, '注意', 'exclamation'),
-      (3, '重要', 'triangle-exclamation')
+      INSERT OR IGNORE INTO urgency_tag_props (id, tag_name, icon_name, color) VALUES 
+      (1, '普通', 'circle-info', '#909399'),
+      (2, '注意', 'circle-exclamation', '#E6A23C'),
+      (3, '重要', 'triangle-exclamation', '#F56C6C')
     `
     this.db.exec(insertDefaultUrgencyTags)
   }

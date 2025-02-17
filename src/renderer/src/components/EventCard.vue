@@ -2,15 +2,10 @@
   <div class="event-card">
     <div class="event-header">
       <div class="title-line">
-        <font-awesome-icon
+        <TagIcon
           v-if="event.tags?.urgencyTag"
-          :icon="event.tags.urgencyTag.icon_name"
-          :title="event.tags.urgencyTag.tag_name"
-          :style="{
-            marginRight: '10px',
-            color: getUrgencyColor(event.tags.urgencyTag.id),
-            fontSize: '22px'
-          }"
+          :tag="event.tags.urgencyTag"
+          :style-props="{ marginRight: '10px', fontSize: '22px' }"
         />
         <h3 class="event-title">{{ event.title }}</h3>
       </div>
@@ -19,12 +14,11 @@
       </div>
     </div>
     <div v-if="event.tags?.typeTags?.length" class="type-tags">
-      <font-awesome-icon
+      <TagIcon
         v-for="tag in event.tags.typeTags"
         :key="tag.id"
-        :title="tag.tag_name"
-        :icon="tag.icon_name"
-        :style="{ marginRight: '8px', color: '#666', fontSize: '1.2em' }"
+        :tag="tag"
+        :style-props="{ marginRight: '8px', fontSize: '1.2em' }"
       />
     </div>
     <div class="event-time">
@@ -51,7 +45,7 @@
 <script setup>
 import { computed } from 'vue'
 import dayjs from 'dayjs'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import TagIcon from './TagIcon.vue'
 
 const props = defineProps({
   event: {
@@ -88,15 +82,6 @@ const getEventStatus = (event) => {
   } else {
     return { text: '进行中', class: 'status-ongoing' }
   }
-}
-
-const getUrgencyColor = (urgencyId) => {
-  const colors = {
-    1: '#909399', // 普通 - 灰色
-    2: '#E6A23C', // 注意 - 黄色
-    3: '#F56C6C' // 重要 - 红色
-  }
-  return colors[urgencyId] || colors[1]
 }
 </script>
 
