@@ -26,6 +26,11 @@
             v-model="selectedFilters[section.id]"
             :title="section.title"
             :options="section.options"
+            :show-intersection-toggle="section.showIntersectionToggle"
+            :initial-intersection="section.initialIntersection"
+            @intersection-change="
+              (isIntersection) => handleIntersectionChange(section.id, isIntersection)
+            "
             @update:model-value="handleFilterChange(section.id, $event)"
           />
         </div>
@@ -52,7 +57,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'intersection-change'])
 
 const isOpen = ref(false)
 const selectedFilters = ref(props.modelValue)
@@ -74,6 +79,10 @@ const toggleFilter = () => {
 const handleFilterChange = (sectionId, value) => {
   selectedFilters.value[sectionId] = value
   emit('update:modelValue', selectedFilters.value)
+}
+
+const handleIntersectionChange = (sectionId, isIntersection) => {
+  emit('intersection-change', sectionId, isIntersection)
 }
 
 const clearFilters = () => {

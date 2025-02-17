@@ -8,7 +8,12 @@
         :class="['tab-item', { active: currentTab === tab.id }]"
         @click="switchTab(tab.id)"
       >
-        {{ tab.name }}
+        <div class="tab-content">
+          {{ tab.name
+          }}<span v-if="currentTab === tab.id" class="tab-count"
+            >({{ filteredEvents.length }})</span
+          >
+        </div>
       </div>
     </div>
 
@@ -25,6 +30,7 @@
       v-model="selectedFilters"
       :sections="filterSections"
       :init-sections="initFilterSections"
+      @intersection-change="handleIntersectionChange"
     />
 
     <!-- 添加日期选择对话框 -->
@@ -47,8 +53,8 @@
             placeholder="开始日期"
             :disabled-date="disabledStartDate"
             value-format="YYYY-MM-DD"
-            @change="handleStartDateChange"
             :popper-options="{ strategy: 'fixed' }"
+            @change="handleStartDateChange"
           />
         </el-form-item>
         <el-form-item class="compact-form-item">
@@ -58,8 +64,8 @@
             placeholder="结束日期"
             :disabled-date="disabledEndDate"
             value-format="YYYY-MM-DD"
-            @change="handleEndDateChange"
             :popper-options="{ strategy: 'fixed' }"
+            @change="handleEndDateChange"
           />
         </el-form-item>
       </el-form>
@@ -77,7 +83,7 @@ import 'vue3-perfect-scrollbar/style.css'
 import { ElDatePicker, ElDialog } from 'element-plus'
 import 'element-plus/dist/index.css'
 
-const currentTab = ref('today')
+const currentTab = ref('week7')
 const events = ref([])
 
 const dateDialogVisible = ref(false)
@@ -96,8 +102,8 @@ const selectedFilters = ref({
 })
 
 const tabs = [
-  { id: 'today', name: '今天' },
   { id: 'week7', name: '近7天' },
+  { id: 'today', name: '今天' },
   { id: 'thisWeek', name: '本周' },
   { id: 'thisMonth', name: '本月' },
   { id: 'thisYear', name: '本年' },
@@ -109,6 +115,8 @@ const filterSections = ref([
   {
     id: 'status',
     title: '状态',
+    showIntersectionToggle: false,
+    initialIntersection: false,
     options: [
       { label: '未开始', value: 'pending' },
       { label: '进行中', value: 'ongoing' },
@@ -118,14 +126,36 @@ const filterSections = ref([
   {
     id: 'urgencyTags',
     title: '重要程度',
+    showIntersectionToggle: false,
+    initialIntersection: false,
     options: []
   },
   {
     id: 'typeTags',
     title: '类型',
+    showIntersectionToggle: true,
+    initialIntersection: false, // 设置初始状态为并集
     options: []
   }
 ])
+
+const sectionIntersectionStates = ref({
+  typeTags: false
+})
+
+const handleIntersectionChange = (sectionId, isIntersection) => {
+  sectionIntersectionStates.value[sectionId] = isIntersection
+  // 强制更新 filterSections 以触发重新渲染
+  filterSections.value = filterSections.value.map((section) => {
+    if (section.id === sectionId) {
+      return {
+        ...section,
+        initialIntersection: isIntersection
+      }
+    }
+    return section
+  })
+}
 
 const getDateRange = (tabId) => {
   const today = dayjs()
@@ -267,7 +297,7 @@ const handleEndDateChange = async (date) => {
 }
 
 onMounted(() => {
-  switchTab('today')
+  switchTab('week7')
 })
 
 // 初始化过滤器部分函数
@@ -311,7 +341,13 @@ const filteredEvents = computed(() => {
 
     const typeMatch =
       selectedFilters.value.typeTags.length === 0 ||
-      event.tags?.typeTags?.some((tag) => selectedFilters.value.typeTags.includes(tag.id))
+      (sectionIntersectionStates.value.typeTags
+        ? // 交集：所有选中的标签都要匹配
+          selectedFilters.value.typeTags.every((tagId) =>
+            event.tags?.typeTags?.some((tag) => tag.id === tagId)
+          )
+        : // 并集：匹配任一选中的标签
+          event.tags?.typeTags?.some((tag) => selectedFilters.value.typeTags.includes(tag.id)))
 
     return statusMatch && urgencyMatch && typeMatch
   })
@@ -347,12 +383,26 @@ const getEventStatus = (event) => {
 }
 
 .tab-item {
-  padding: 16px 0;
-  text-align: center;
+  padding: 16px 10px;
   cursor: pointer;
   font-size: 16px;
   color: #666;
   transition: all 0.3s ease;
+}
+
+.tab-content {
+  text-align: center; /* 居中对齐 */
+}
+
+.tab-count {
+  font-size: 13px; /* 数字稍微小一点 */
+  color: #999; /* 数字颜色浅一点 */
+  margin-left: 2px; /* 与标题保持小距离 */
+  display: inline-block; /* 确保和文字在同一行 */
+}
+
+.tab-item.active .tab-count {
+  color: #07c160; /* 激活状态下数字颜色跟随主色 */
 }
 
 .tab-item:hover {
