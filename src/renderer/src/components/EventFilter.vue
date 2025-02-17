@@ -38,7 +38,6 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import FilterSection from './FilterSection.vue'
 //TODO: 将当前组件做的更通用，filterSections和对应的onMounted中数据初始化由父组件传入
-//TODO: filterSection应当也有一个清空按钮
 const props = defineProps({
   modelValue: {
     type: Object,

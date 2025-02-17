@@ -1,6 +1,11 @@
 <template>
   <div class="filter-section">
-    <h4>{{ title }}</h4>
+    <div class="section-header">
+      <h4>
+        {{ title }}
+        <span v-if="hasSelectedValues" class="section-clear-btn" @click="clearSection">清除</span>
+      </h4>
+    </div>
     <div class="checkbox-group">
       <label v-for="option in options" :key="option.value">
         <input
@@ -21,7 +26,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 const props = defineProps({
@@ -42,6 +47,14 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const selectedValues = ref(props.modelValue)
+// 计算是否有选中的值
+const hasSelectedValues = computed(() => selectedValues.value.length > 0)
+
+// 清除当前section的选中值
+const clearSection = () => {
+  selectedValues.value = []
+  emit('update:modelValue', [])
+}
 
 const emitChange = () => {
   emit('update:modelValue', selectedValues.value)
@@ -60,9 +73,30 @@ watch(
   margin-bottom: 16px;
 }
 
-.filter-section h4 {
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.section-header h4 {
   margin: 0 0 8px 0;
   color: #666;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.section-clear-btn {
+  font-size: 12px;
+  color: #409eff;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.section-clear-btn:hover {
+  color: #66b1ff;
 }
 
 .checkbox-group {

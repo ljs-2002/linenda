@@ -82,14 +82,12 @@ const switchTab = async (tabId) => {
   // 获取所有事件的标签信息
   const eventIds = result.map((event) => event.id)
   const tagsResult = await window.electron.ipcRenderer.invoke('get-events-tags-by-ids', eventIds)
-  console.log('eventIds', eventIds, 'tagsResult', tagsResult)
   events.value = result
     .map((event) => ({
       ...event,
       tags: tagsResult[event.id]
     }))
     .sort((a, b) => dayjs(b.start).valueOf() - dayjs(a.start).valueOf())
-  console.log('taskView', events.value)
   // 添加滚动重置
   const container = document.querySelector('.ps')
   if (container) {
