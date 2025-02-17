@@ -21,7 +21,11 @@
     </perfect-scrollbar>
 
     <!-- 添加过滤器组件 -->
-    <EventFilter v-model="selectedFilters" />
+    <EventFilter
+      v-model="selectedFilters"
+      :sections="filterSections"
+      :init-sections="initFilterSections"
+    />
   </div>
 </template>
 
@@ -47,6 +51,28 @@ const tabs = [
   { id: 'thisMonth', name: '本月' },
   { id: 'thisYear', name: '本年' }
 ]
+
+const filterSections = ref([
+  {
+    id: 'status',
+    title: '状态',
+    options: [
+      { label: '未开始', value: 'pending' },
+      { label: '进行中', value: 'ongoing' },
+      { label: '已完成', value: 'completed' }
+    ]
+  },
+  {
+    id: 'urgencyTags',
+    title: '重要程度',
+    options: []
+  },
+  {
+    id: 'typeTags',
+    title: '类型',
+    options: []
+  }
+])
 
 const getDateRange = (tabId) => {
   const today = dayjs()
@@ -98,6 +124,29 @@ const switchTab = async (tabId) => {
 onMounted(() => {
   switchTab('week7')
 })
+
+// 初始化过滤器部分函数
+const initFilterSections = async () => {
+  const urgencyTags = await window.electron.ipcRenderer.invoke('get-all-urgency-tags')
+  const typeTags = await window.electron.ipcRenderer.invoke('get-all-type-tags')
+
+  filterSections.value = filterSections.value.map((section) => {
+    if (section.id === 'urgencyTags') {
+      section.options = urgencyTags.map((tag) => ({
+        label: tag.urgency_tag_name,
+        value: tag.id,
+        icon: tag.icon_name
+      }))
+    } else if (section.id === 'typeTags') {
+      section.options = typeTags.map((tag) => ({
+        label: tag.type_tag_name,
+        value: tag.id,
+        icon: tag.icon_name
+      }))
+    }
+    return section
+  })
+}
 
 const filteredEvents = computed(() => {
   if (!Object.values(selectedFilters.value).some((arr) => arr.length > 0)) {

@@ -21,7 +21,7 @@
         </div>
         <div class="filter-content">
           <FilterSection
-            v-for="section in filterSections"
+            v-for="section in sections"
             :key="section.id"
             v-model="selectedFilters[section.id]"
             :title="section.title"
@@ -37,15 +37,18 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import FilterSection from './FilterSection.vue'
-//TODO: 将当前组件做的更通用，filterSections和对应的onMounted中数据初始化由父组件传入
 const props = defineProps({
   modelValue: {
     type: Object,
-    default: () => ({
-      status: [],
-      urgencyTags: [],
-      typeTags: []
-    })
+    required: true
+  },
+  sections: {
+    type: Array,
+    required: true
+  },
+  initSections: {
+    type: Function,
+    default: () => Promise.resolve()
   }
 })
 
@@ -63,28 +66,6 @@ watch(
   },
   { deep: true }
 )
-
-const filterSections = ref([
-  {
-    id: 'status',
-    title: '状态',
-    options: [
-      { label: '未开始', value: 'pending' },
-      { label: '进行中', value: 'ongoing' },
-      { label: '已完成', value: 'completed' }
-    ]
-  },
-  {
-    id: 'urgencyTags',
-    title: '重要程度',
-    options: [] // 将在 onMounted 中填充
-  },
-  {
-    id: 'typeTags',
-    title: '类型',
-    options: [] // 将在 onMounted 中填充
-  }
-])
 
 const toggleFilter = () => {
   isOpen.value = !isOpen.value
@@ -112,32 +93,10 @@ const handleClickOutside = () => {
 }
 
 // 组件挂载时添加点击事件监听
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
 onMounted(async () => {
-  // 获取标签数据
-  const urgencyTags = await window.electron.ipcRenderer.invoke('get-all-urgency-tags')
-  const typeTags = await window.electron.ipcRenderer.invoke('get-all-type-tags')
-
-  // 更新选项
-  filterSections.value = filterSections.value.map((section) => {
-    if (section.id === 'urgencyTags') {
-      section.options = urgencyTags.map((tag) => ({
-        label: tag.urgency_tag_name,
-        value: tag.id,
-        icon: tag.icon_name
-      }))
-    } else if (section.id === 'typeTags') {
-      section.options = typeTags.map((tag) => ({
-        label: tag.type_tag_name,
-        value: tag.id,
-        icon: tag.icon_name
-      }))
-    }
-    return section
-  })
+  document.addEventListener('click', handleClickOutside)
+  // 执行初始化函数
+  await props.initSections()
 })
 
 // 组件卸载时移除点击事件监听
