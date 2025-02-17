@@ -13,7 +13,8 @@ export async function readConfig() {
   } catch (error) {
     // 如果配置文件不存在，创建默认配置
     const defaultConfig = {
-      dbPath: join(app.getAppPath(), 'db')
+      dbPath: join(app.getAppPath(), 'db'),
+      dbName: 'calendar.db'
     }
     await fs.writeFile(CONFIG_FILE, yaml.dump(defaultConfig), 'utf8')
     return defaultConfig
@@ -43,7 +44,8 @@ class EventDatabase {
     const config = await readConfig()
     // 判断数据库文件夹是否存在，不存在则创建
     await fs.mkdir(config.dbPath, { recursive: true })
-    const dbPath = join(config.dbPath, 'calendar.db')
+    const dbPath = join(config.dbPath, config.dbName)
+    this.dbName = config.dbName
     this.db = new Database(dbPath)
     this.init()
     this.initTagProps()
@@ -53,7 +55,7 @@ class EventDatabase {
     if (this.db) {
       this.db.close()
     }
-    this.db = new Database(join(newPath, 'calendar.db'))
+    this.db = new Database(join(newPath, this.dbName))
     this.init()
     this.initTagProps()
   }
