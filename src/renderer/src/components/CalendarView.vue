@@ -131,7 +131,7 @@ const calendarOptions = {
 }
 </script>
 
-<style>
+<style scoped>
 .calendar-view {
   flex: 1;
   display: flex;

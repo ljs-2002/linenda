@@ -311,7 +311,7 @@ defineExpose({
 })
 </script>
 
-<style>
+<style scoped>
 .el-select .el-input__prefix {
   display: flex;
   align-items: center;
