@@ -100,12 +100,7 @@ class EventDatabase {
       if (date.length === 10) {
         // 如果是 yyyy-mm-dd 格式
         if (end) {
-          const nextDay = new Date(date)
-          nextDay.setDate(nextDay.getDate() + 1)
-          const yyyy = nextDay.getFullYear()
-          const mm = String(nextDay.getMonth() + 1).padStart(2, '0')
-          const dd = String(nextDay.getDate()).padStart(2, '0')
-          return `${yyyy}-${mm}-${dd}T00:00:00+08:00`
+          return `${date}T23:59:59+08:00` // 补充时间部分
         } else {
           return `${date}T00:00:00+08:00` // 补充时间部分
         }
