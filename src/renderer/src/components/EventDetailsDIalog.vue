@@ -1,27 +1,12 @@
 <template>
-  <el-dialog v-model="visible" :title="'事件详情'" width="30%" @closed="handleClose">
-    <div class="event-details">
-      <p v-if="event?.extendedProps?.urgencyTagId" class="title-line">
-        <TagIcon :tag="getTagInfo(event.extendedProps.urgencyTagId, urgencyTags)" />
-        <strong>{{ event?.title }}</strong>
-      </p>
-      <p v-if="event?.extendedProps?.typeTagIds?.length" class="type-tags">
-        <TagIcon
-          v-for="id in event.extendedProps.typeTagIds"
-          :key="id"
-          :tag="getTagInfo(id, typeTags)"
-          :style-props="{ marginRight: '8px' }"
-        />
-      </p>
-      <p><strong>开始时间：</strong>{{ formatDateTime(event?.start, event?.allDay) }}</p>
-      <p><strong>结束时间：</strong>{{ formatDateTime(event?.end, event?.allDay) }}</p>
-      <p><strong>全天事件：</strong>{{ event?.allDay ? '是' : '否' }}</p>
-      <p v-if="event?.url"><strong>链接：</strong>{{ event?.url }}</p>
-      <p v-if="event?.extendedProps.description">
-        <strong>描述：</strong>{{ event?.extendedProps.description }}
-      </p>
-    </div>
-
+  <el-dialog
+    v-model="visible"
+    :title="'事件详情'"
+    width="50%"
+    :close-on-click-modal="false"
+    @closed="handleClose"
+  >
+    <EventCard v-if="formattedEvent" :event="formattedEvent" />
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="handleEdit">编辑</el-button>
@@ -34,10 +19,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import EventDialog from './EventDialog.vue'
+import EventCard from './EventCard.vue'
 import { ElMessageBox } from 'element-plus'
-import TagIcon from './TagIcon.vue'
 
 const visible = ref(false)
 const event = ref(null)
@@ -45,28 +30,28 @@ const eventDialogRef = ref(null)
 const urgencyTags = ref([])
 const typeTags = ref([])
 
-const formatDateTime = (dateTime, isAllDay = false) => {
-  if (!dateTime) return ''
-  const date = new Date(dateTime)
-  const options = {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    ...(isAllDay
-      ? {}
-      : {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        })
+// 格式化事件数据以适配 EventCard 组件的数据结构
+const formattedEvent = computed(() => {
+  if (!event.value) return null
+
+  return {
+    ...event.value,
+    tags: {
+      urgencyTag: getTagInfo(event.value?.extendedProps?.urgencyTagId, urgencyTags.value),
+      typeTags:
+        event.value?.extendedProps?.typeTagIds?.map((id) => getTagInfo(id, typeTags.value)) || []
+    },
+    title: event.value.title,
+    start: event.value.start,
+    end: event.value.end,
+    allDay: event.value.allDay,
+    description: event.value?.extendedProps?.description,
+    url: event.value?.url
   }
-  return date.toLocaleString('zh-CN', options).replace(/\//g, '-')
-}
+})
 
 const showDialog = (eventData) => {
-  event.value = {
-    ...eventData
-  }
+  event.value = { ...eventData }
   visible.value = true
 }
 
@@ -99,7 +84,7 @@ const handleDelete = async () => {
   }
 }
 
-const handleClose = async () => {
+const handleClose = () => {
   event.value = null
 }
 
@@ -121,12 +106,10 @@ const emit = defineEmits(['update', 'delete'])
 </script>
 
 <style scoped>
-.event-details p {
-  margin: 8px 0;
-}
 .dialog-footer {
   display: flex;
   justify-content: center;
   gap: 16px;
+  padding-top: 16px;
 }
 </style>

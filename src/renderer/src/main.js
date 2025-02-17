@@ -19,6 +19,8 @@ import {
   faGamepad
 } from '@fortawesome/free-solid-svg-icons'
 
+//TODO：动态add所有用到的图标
+
 library.add(
   faCircleInfo,
   faCircleExclamation,

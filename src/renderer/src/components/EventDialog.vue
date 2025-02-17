@@ -1,78 +1,85 @@
 <template>
   <el-dialog v-model="dialogVisible" :title="isNew ? '新建事件' : '编辑事件'" width="500px">
-    <el-form ref="formRef" :model="eventForm" :rules="rules" label-width="100px">
-      <!-- 基本配置 -->
-      <el-form-item label="标题" prop="title">
-        <el-input v-model="eventForm.title" placeholder="请输入事件标题"></el-input>
-      </el-form-item>
-      <el-form-item label="紧急程度">
-        <el-select v-model="eventForm.urgencyTagId" placeholder="请选择紧急程度">
-          <template #default>
-            <el-option
-              v-for="tag in urgencyTags"
-              :key="tag.id"
-              :label="tag.tag_name"
-              :value="tag.id"
-            >
-              <TagIcon :tag="tag" :style-props="{ marginRight: '4px' }" />
+    <perfect-scrollbar class="dialog-scroll-container">
+      <el-form ref="formRef" :model="eventForm" :rules="rules" label-width="100px">
+        <!-- 基本配置 -->
+        <el-form-item label="标题" prop="title">
+          <el-input v-model="eventForm.title" placeholder="请输入事件标题"></el-input>
+        </el-form-item>
+        <el-form-item label="紧急程度">
+          <el-select v-model="eventForm.urgencyTagId" placeholder="请选择紧急程度">
+            <template #default>
+              <el-option
+                v-for="tag in urgencyTags"
+                :key="tag.id"
+                :label="tag.tag_name"
+                :value="tag.id"
+              >
+                <TagIcon :tag="tag" :style-props="{ marginRight: '4px' }" />
+                {{ tag.tag_name }}
+              </el-option>
+            </template>
+            <template v-if="getSelectedTag(eventForm.urgencyTagId)" #prefix>
+              <TagIcon :tag="getSelectedTag(eventForm.urgencyTagId)" />
+            </template>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="事件类型">
+          <el-select
+            v-model="eventForm.typeTagIds"
+            multiple
+            collapse-tags
+            collapse-tags-tooltip
+            :max-collapse-tags="3"
+            placeholder="请选择事件类型"
+          >
+            <template #label="{ label, value }">
+              <TagIcon :tag="getTypeTag(value)" />
+              {{ label }}
+            </template>
+            <el-option v-for="tag in typeTags" :key="tag.id" :label="tag.tag_name" :value="tag.id">
+              <TagIcon v-if="tag" :tag="tag" :style-props="{ marginRight: '4px' }" />
               {{ tag.tag_name }}
             </el-option>
-          </template>
-          <template v-if="getSelectedTag(eventForm.urgencyTagId)" #prefix>
-            <TagIcon :tag="getSelectedTag(eventForm.urgencyTagId)" />
-          </template>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="事件类型">
-        <el-checkbox-group v-model="eventForm.typeTagIds">
-          <el-checkbox v-for="tag in typeTags" :key="tag.id" :value="tag.id">
-            <TagIcon :tag="tag" />
-            {{ tag.tag_name }}
-          </el-checkbox>
-        </el-checkbox-group>
-      </el-form-item>
-      <el-form-item label="整天事件">
-        <el-switch v-model="eventForm.allDay"></el-switch>
-      </el-form-item>
-      <el-form-item label="开始时间" prop="start">
-        <el-date-picker
-          v-model="eventForm.start"
-          :type="eventForm.allDay ? 'date' : 'datetime'"
-          placeholder="选择开始时间"
-          :format="eventForm.allDay ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm'"
-          :value-format="eventForm.allDay ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm'"
-          :disabled-date="getDisabledStartDate"
-          @change="handleStartChange"
-        ></el-date-picker>
-      </el-form-item>
-      <el-form-item label="结束时间" prop="end">
-        <el-date-picker
-          v-model="eventForm.end"
-          :type="eventForm.allDay ? 'date' : 'datetime'"
-          placeholder="选择结束时间"
-          :format="eventForm.allDay ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm'"
-          :value-format="eventForm.allDay ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm'"
-          :disabled-date="getDisabledEndDate"
-          @change="handleEndChange"
-        ></el-date-picker>
-      </el-form-item>
-
-      <!-- 高级配置 -->
-      <el-collapse>
-        <el-collapse-item title="高级配置">
-          <el-form-item label="URL">
-            <el-input v-model="eventForm.url" placeholder="请输入相关URL"></el-input>
-          </el-form-item>
-          <el-form-item label="描述">
-            <el-input
-              v-model="eventForm.description"
-              type="textarea"
-              placeholder="请输入事件描述"
-            ></el-input>
-          </el-form-item>
-        </el-collapse-item>
-      </el-collapse>
-    </el-form>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="整天事件">
+          <el-switch v-model="eventForm.allDay"></el-switch>
+        </el-form-item>
+        <el-form-item label="开始时间" prop="start">
+          <el-date-picker
+            v-model="eventForm.start"
+            :type="eventForm.allDay ? 'date' : 'datetime'"
+            placeholder="选择开始时间"
+            :format="eventForm.allDay ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm'"
+            :value-format="eventForm.allDay ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm'"
+            :disabled-date="getDisabledStartDate"
+            @change="handleStartChange"
+          ></el-date-picker>
+        </el-form-item>
+        <el-form-item label="结束时间" prop="end">
+          <el-date-picker
+            v-model="eventForm.end"
+            :type="eventForm.allDay ? 'date' : 'datetime'"
+            placeholder="选择结束时间"
+            :format="eventForm.allDay ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm'"
+            :value-format="eventForm.allDay ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm'"
+            :disabled-date="getDisabledEndDate"
+            @change="handleEndChange"
+          ></el-date-picker>
+        </el-form-item>
+        <el-form-item label="URL">
+          <el-input v-model="eventForm.url" placeholder="请输入相关URL"></el-input>
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input
+            v-model="eventForm.description"
+            type="textarea"
+            placeholder="请输入事件描述"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+    </perfect-scrollbar>
 
     <template #footer>
       <span class="dialog-footer">
@@ -87,6 +94,8 @@
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { watch, onMounted } from 'vue'
+import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
+import 'vue3-perfect-scrollbar/style.css'
 import TagIcon from './TagIcon.vue'
 
 const dialogVisible = ref(false)
@@ -184,9 +193,6 @@ const eventFormTamplate = {
 }
 
 const eventForm = reactive(eventFormTamplate)
-//FIXME: 1. 第一次点击的时候会将当前日期设置为结束日期，但之后正常了
-//FIXME: 2. 当前页面太长时滚动条出现在了整个页面而不是弹窗内部
-//FIXME: 3. 窗口最大化、窗口化时会在右上角显示窗口大小
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
   start: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
@@ -290,6 +296,10 @@ const getSelectedTag = (id) => {
   return urgencyTags.value.find((tag) => tag.id === id)
 }
 
+const getTypeTag = (id) => {
+  return typeTags.value.find((tag) => tag.id === id)
+}
+
 onMounted(async () => {
   // 加载紧急程度和事件类型标签
   urgencyTags.value = await window.electron.ipcRenderer.invoke('get-all-urgency-tags')
@@ -310,5 +320,16 @@ defineExpose({
 
 .el-select .el-input__inner {
   padding-left: 0; /* 为图标留出空间 */
+}
+
+.dialog-scroll-container {
+  max-height: calc(80vh - 150px); /* 设置最大高度，减去标题和按钮的高度 */
+  padding-right: 20px; /* 为滚动条留出空间 */
+  overflow: hidden;
+}
+
+.el-collapse-item__content {
+  transition: all 0.3s ease-in-out;
+  padding-bottom: 16px;
 }
 </style>
