@@ -108,6 +108,9 @@ const today = () => {
   font-size: 16px;
   font-weight: 500;
   line-height: 24px;
+  width: 100px;
+  text-align: center;
+  display: inline-block;
 }
 
 .right-section {
