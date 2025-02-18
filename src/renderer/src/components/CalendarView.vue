@@ -1,5 +1,12 @@
 <template>
   <div class="calendar-view">
+    <CustomHeader
+      :date="currentDate"
+      :title="headerTitle"
+      @prev="handlePrev"
+      @next="handleNext"
+      @today="handleToday"
+    />
     <FullCalendar ref="calendarRef" :options="calendarOptions" />
     <EventDialog ref="eventDialogRef" @save="saveEvent" />
     <EventDetailsDialog ref="eventDetailsDialogRef" @update="updateEvent" @delete="deleteEvent" />
@@ -7,20 +14,22 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import listPlugin from '@fullcalendar/list'
 import EventDialog from './EventDialog.vue'
 import EventDetailsDialog from './EventDetailsDialog.vue'
+import CustomHeader from './CustomHeader.vue'
 import { useCalendarStore } from '../stores/calendar'
 
 const calendarStore = useCalendarStore()
 const eventDialogRef = ref(null)
 const eventDetailsDialogRef = ref(null)
 const calendarRef = ref(null)
+
+const currentDate = ref(new Date())
+const headerTitle = ref('')
 
 const formatDateTime = (date) => {
   const year = date.getFullYear()
@@ -62,6 +71,33 @@ const deleteEvent = async (eventData) => {
   if (event) {
     event.remove()
   }
+}
+
+const updateHeaderTitle = () => {
+  const calendarApi = calendarRef.value.getApi()
+  const date = calendarApi.getDate()
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  headerTitle.value = `${year}年${month}月`
+  currentDate.value = date
+}
+
+const handlePrev = () => {
+  const calendarApi = calendarRef.value.getApi()
+  calendarApi.prev()
+  updateHeaderTitle()
+}
+
+const handleNext = () => {
+  const calendarApi = calendarRef.value.getApi()
+  calendarApi.next()
+  updateHeaderTitle()
+}
+
+const handleToday = () => {
+  const calendarApi = calendarRef.value.getApi()
+  calendarApi.today()
+  updateHeaderTitle()
 }
 
 //###########################################################
@@ -107,13 +143,10 @@ const handleEventChange = async (changeInfo) => {
 }
 
 const calendarOptions = {
-  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
+  plugins: [dayGridPlugin, interactionPlugin],
   initialView: 'dayGridMonth',
-  headerToolbar: {
-    left: 'prev,next today',
-    center: 'title',
-    right: 'dayGridMonth,timeGridWeek,timeGridDay,listYear'
-  },
+  locale: 'zh-cn',
+  headerToolbar: false,
   editable: true,
   selectable: true,
   eventDurationEditable: true,
@@ -130,6 +163,10 @@ const calendarOptions = {
   eventRemove: handleEventRemove,
   eventChange: handleEventChange
 }
+
+onMounted(() => {
+  updateHeaderTitle()
+})
 </script>
 
 <style scoped>
