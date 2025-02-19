@@ -1,7 +1,7 @@
 <template>
   <div class="custom-header">
     <div class="left-section">
-      <span class="today-date">{{ day }}</span>
+      <span class="today-date" @click="toggleSidebar">{{ day }}</span>
       <span class="navigation">
         <button class="nav-button" @click="prev">‹</button>
         <span class="title">{{ title }}</span>
@@ -40,7 +40,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['prev', 'next', 'today'])
+const emit = defineEmits(['prev', 'next', 'today', 'toggle-sidebar'])
 
 const day = computed(() => {
   return String(props.date.getDate()).padStart(2, '0')
@@ -56,6 +56,10 @@ const next = () => {
 
 const today = () => {
   emit('today')
+}
+
+const toggleSidebar = () => {
+  emit('toggle-sidebar')
 }
 </script>
 
@@ -78,6 +82,11 @@ const today = () => {
   color: #666;
   font-weight: 400;
   line-height: 1;
+  cursor: pointer;
+}
+
+.today-date:hover {
+  color: #333; /* 添加悬停效果 */
 }
 
 .navigation {

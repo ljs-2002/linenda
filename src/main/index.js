@@ -8,8 +8,8 @@ import EventDatabase, { readConfig, saveConfig } from './database.js'
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 551,
+    width: 750,
+    height: 555,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),

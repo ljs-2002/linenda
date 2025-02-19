@@ -6,6 +6,7 @@
       @prev="handlePrev"
       @next="handleNext"
       @today="handleToday"
+      @toggle-sidebar="emitToggleSidebar"
     />
     <FullCalendar ref="calendarRef" :options="calendarOptions">
       <template #dayCellContent="arg">
@@ -22,11 +23,15 @@
               {{ getLunarDate(arg.date).festival || getLunarDate(arg.date).lunarDayName }}
             </span>
           </div>
-          <div v-if="hasEvents(arg.date)" class="event-dot"></div>
+          <div v-if="hasDailyEvents(arg.date)" class="event-dots">
+            <template v-for="[tagId, count] in getDailyEventCounts(arg.date)" :key="tagId">
+              <div v-if="count > 0" class="event-tag-count">
+                <TagIcon :tag="getUrgencyTag(Number(tagId))" />
+                <span class="count">{{ count }}</span>
+              </div>
+            </template>
+          </div>
         </div>
-      </template>
-      <template #eventContent="arg">
-        <div class="event-dot" v-if="!arg.isToday"></div>
       </template>
       <template #dayHeaderContent="arg">
         <span class="header-text">{{ arg.text.slice(-1) }}</span>
@@ -38,15 +43,32 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, nextTick } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
+import { useCalendarStore } from '../stores/calendar'
+import { Lunar } from 'lunar-javascript'
+
 import EventDialog from './EventDialog.vue'
 import EventDetailsDialog from './EventDetailsDialog.vue'
 import CustomHeader from './CustomHeader.vue'
-import { useCalendarStore } from '../stores/calendar'
-import { Lunar } from 'lunar-javascript'
+import TagIcon from './TagIcon.vue'
+
+const emit = defineEmits(['toggle-sidebar'])
+
+const handleSidebarToggle = async () => {
+  await nextTick()
+  const calendarApi = calendarRef.value?.getApi()
+  if (calendarApi) {
+    calendarApi.updateSize()
+  }
+}
+
+const emitToggleSidebar = async () => {
+  emit('toggle-sidebar')
+  await handleSidebarToggle()
+}
 
 const calendarStore = useCalendarStore()
 const eventDialogRef = ref(null)
@@ -64,6 +86,31 @@ const formatDateTime = (date) => {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+//###########################################################
+// event-dots 显示逻辑
+//###########################################################
+const getUrgencyTag = (tagId) => {
+  console.log('getUrgencyTag', calendarStore.urgencyTags, tagId)
+  return calendarStore.getUrgencyTagById(tagId)
+}
+
+const getDailyEventCounts = (date) => {
+  const tagCounts = calendarStore.getDailyEventCounts(date)
+  const sortedtagCounts = Object.entries(tagCounts).sort(
+    (tagCount1, tagCount2) => tagCount2[0] - tagCount1[0]
+  )
+  if (Object.keys(sortedtagCounts).length > 0) {
+    console.log('getDailyEventCounts', sortedtagCounts)
+  }
+
+  return sortedtagCounts
+}
+
+const hasDailyEvents = (date) => {
+  const counts = getDailyEventCounts(date)
+  return Object.keys(counts).length > 0
 }
 
 //###########################################################
@@ -194,19 +241,6 @@ const handleEventChange = async (changeInfo) => {
   await calendarStore.changeEvent(changeInfo.event)
 }
 
-const handleAddEventButtonClick = () => {
-  const startTime = new Date(currentDate.value.getTime())
-  const endTime = new Date(currentDate.value.getTime())
-  startTime.setHours(0, 0, 0)
-  endTime.setHours(23, 59, 59)
-  eventDialogRef.value?.showDialog({
-    start: formatDateTime(startTime),
-    end: formatDateTime(endTime),
-    allDay: false,
-    calendar: calendarRef.value.getApi()
-  })
-}
-
 // 添加农历日期计算函数
 const getLunarDate = (date) => {
   const lunar = Lunar.fromDate(date)
@@ -214,21 +248,6 @@ const getLunarDate = (date) => {
     lunarDayName: lunar.getDayInChinese(),
     festival: lunar.getFestivals().join(' ') || ''
   }
-}
-
-// 添加检查事件的方法
-const hasEvents = (date) => {
-  return calendarRef.value
-    ?.getApi()
-    .getEvents()
-    .some((event) => {
-      const eventDate = event.start
-      return (
-        eventDate.getFullYear() === date.getFullYear() &&
-        eventDate.getMonth() === date.getMonth() &&
-        eventDate.getDate() === date.getDate()
-      )
-    })
 }
 
 const calendarOptions = {
@@ -258,14 +277,15 @@ onMounted(() => {
 
 <style scoped>
 .calendar-view {
-  --day-size: 50px;
+  --day-size: 46px;
   --day-radius: 50%;
   --dot-size: 4px;
-  --date-font-size: 28px;
+  --date-font-size: 22px;
   --lunar-font-size: 12px;
-  --header-font-size: 18px;
-  --tr-height: 70px;
+  --header-font-size: 14px;
+  --tr-height: 68px;
   --header-tr-height: 20px;
+  --event-tag-font-size: 11px;
 
   flex: 1;
   display: flex;
@@ -305,22 +325,44 @@ onMounted(() => {
   color: #333;
 }
 
-/* 事件点的位置调整 */
-:deep(.event-dot) {
+:deep(.event-dots) {
   position: absolute;
-  bottom: -8px; /* 调整事件点的位置，避免重叠 */
-  width: var(--dot-size);
-  height: var(--dot-size);
-  background-color: #1890ff;
-  border-radius: var(--day-radius);
+  bottom: -14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+:deep(.event-tag-count) {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background-color: #fff;
+  padding: 0px 2px;
+  border-radius: 4px;
+  font-size: var(--event-tag-font-size);
+}
+
+:deep(.event-tag-count:not(:last-child))::after {
+  content: '|';
+  color: #6e6e6e;
+  margin-left: 2px;
+  font-size: var(--event-tag-font-size);
+}
+
+:deep(.count) {
+  font-size: var(--event-tag-font-size);
+  font-weight: 500;
+  color: #666;
+  line-height: 1;
 }
 
 :deep(.lunar-text) {
-  font-size: var(--lunar-font-size); /* 增大农历字体 */
+  font-size: var(--lunar-font-size);
   color: #999;
   line-height: 1;
   margin-top: 2px;
-  margin-bottom: 6px; /* 为事件点留出更多空间 */
+  margin-bottom: 6px;
 }
 
 :deep(.festival) {

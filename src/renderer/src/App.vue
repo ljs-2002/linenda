@@ -2,17 +2,24 @@
   <div id="app">
     <SystemTitleBar />
     <div class="main-content">
-      <Sidebar />
+      <Sidebar v-show="showSidebar" />
       <div class="content">
-        <router-view />
+        <router-view @toggle-sidebar="toggleSidebar" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import SystemTitleBar from './components/SystemTitleBar.vue'
+
+const showSidebar = ref(true)
+
+const toggleSidebar = () => {
+  showSidebar.value = !showSidebar.value
+}
 </script>
 
 <style>
