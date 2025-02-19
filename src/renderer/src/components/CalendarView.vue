@@ -55,21 +55,6 @@ import EventDetailsDialog from './EventDetailsDialog.vue'
 import CustomHeader from './CustomHeader.vue'
 import TagIcon from './TagIcon.vue'
 
-const emit = defineEmits(['toggle-sidebar'])
-
-const handleSidebarToggle = async () => {
-  await nextTick()
-  const calendarApi = calendarRef.value?.getApi()
-  if (calendarApi) {
-    calendarApi.updateSize()
-  }
-}
-
-const emitToggleSidebar = async () => {
-  emit('toggle-sidebar')
-  await handleSidebarToggle()
-}
-
 const calendarStore = useCalendarStore()
 const eventDialogRef = ref(null)
 const eventDetailsDialogRef = ref(null)
@@ -86,6 +71,24 @@ const formatDateTime = (date) => {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+//###########################################################
+// 侧边栏显示逻辑
+//###########################################################
+const emit = defineEmits(['toggle-sidebar'])
+
+const handleSidebarToggle = async () => {
+  await nextTick()
+  const calendarApi = calendarRef.value?.getApi()
+  if (calendarApi) {
+    calendarApi.updateSize()
+  }
+}
+
+const emitToggleSidebar = async () => {
+  emit('toggle-sidebar')
+  await handleSidebarToggle()
 }
 
 //###########################################################
