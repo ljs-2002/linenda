@@ -29,39 +29,48 @@ const getDateRange = (start, end) => {
 
 export const useCalendarStore = defineStore('calendar', () => {
   const events = ref([])
-  const dailyEventCounts = ref(new Map())
+  const dailyEventCounts = ref({})
   const urgencyTags = ref([])
+  const typeTags = ref([])
 
   const updateDailyCounts = (dates, urgencyTagId, isAdd = true) => {
     if (!urgencyTagId) return
 
     dates.forEach((dateKey) => {
-      const currentCounts = dailyEventCounts.value.get(dateKey) || {}
+      // 确保对象存在
+      if (!dailyEventCounts.value[dateKey]) {
+        dailyEventCounts.value[dateKey] = {}
+      }
+
       if (isAdd) {
-        currentCounts[urgencyTagId] = (currentCounts[urgencyTagId] || 0) + 1
+        if (!dailyEventCounts.value[dateKey][urgencyTagId]) {
+          dailyEventCounts.value[dateKey][urgencyTagId] = 0
+        }
+        dailyEventCounts.value[dateKey][urgencyTagId]++
       } else {
-        currentCounts[urgencyTagId] = Math.max(0, (currentCounts[urgencyTagId] || 0) - 1)
-        if (currentCounts[urgencyTagId] === 0) {
-          delete currentCounts[urgencyTagId]
+        if (dailyEventCounts.value[dateKey][urgencyTagId]) {
+          dailyEventCounts.value[dateKey][urgencyTagId]--
+          if (dailyEventCounts.value[dateKey][urgencyTagId] === 0) {
+            delete dailyEventCounts.value[dateKey][urgencyTagId]
+          }
         }
       }
 
-      if (Object.keys(currentCounts).length > 0) {
-        dailyEventCounts.value.set(dateKey, currentCounts)
-      } else {
-        dailyEventCounts.value.delete(dateKey)
+      // 如果该日期没有任何事件，删除该日期的记录
+      if (Object.keys(dailyEventCounts.value[dateKey]).length === 0) {
+        delete dailyEventCounts.value[dateKey]
       }
     })
   }
 
   const getDailyEventCounts = (date) => {
-    const counts = dailyEventCounts.value.get(formatDateKey(date)) || {}
-    // 转换为普通对象
-    return Object.fromEntries(Object.entries(counts))
+    const dateKey = formatDateKey(date)
+    return dailyEventCounts.value[dateKey] || {}
   }
 
   const addEvent = async (event) => {
     const newEvent = transformEvent(event)
+    console.log('newEvent', newEvent)
     await window.electron.ipcRenderer.invoke('add-event', newEvent)
     const dates = getDateRange(newEvent.start, newEvent.end)
     updateDailyCounts(dates, newEvent.urgencyTagId, true)
@@ -69,8 +78,9 @@ export const useCalendarStore = defineStore('calendar', () => {
 
   const removeEvent = async (event) => {
     await window.electron.ipcRenderer.invoke('delete-event', event.id)
+    events.value = events.value.filter((e) => e.id !== event.id)
     const dates = getDateRange(event.start, event.end)
-    updateDailyCounts(dates, event.urgencyTagId, false)
+    updateDailyCounts(dates, event.extendedProps?.urgencyTagId, false)
   }
 
   const changeEvent = async (event) => {
@@ -96,13 +106,19 @@ export const useCalendarStore = defineStore('calendar', () => {
     return urgencyTags.value.find((tag) => tag.id === id)
   }
 
+  const getTypeTagById = (id) => {
+    return typeTags.value.find((tag) => tag.id === id)
+  }
+
   // 初始化加载所有事件
   const initializeEvents = async () => {
-    const [loadedEvents, loadedTags] = await Promise.all([
+    const [loadedEvents, loadedUrgencyTags, loadedTypeTags] = await Promise.all([
       window.electron.ipcRenderer.invoke('get-all-events'),
-      window.electron.ipcRenderer.invoke('get-all-urgency-tags')
+      window.electron.ipcRenderer.invoke('get-all-urgency-tags'),
+      window.electron.ipcRenderer.invoke('get-all-type-tags')
     ])
-    urgencyTags.value = loadedTags
+    urgencyTags.value = loadedUrgencyTags
+    typeTags.value = loadedTypeTags
     const eventsWithTags = await Promise.all(
       loadedEvents.map(async (event) => {
         const tags = await window.electron.ipcRenderer.invoke('get-event-tags', event.id)
@@ -120,20 +136,23 @@ export const useCalendarStore = defineStore('calendar', () => {
       })
     )
     events.value = eventsWithTags
-    console.log('dayliEventCounts', dailyEventCounts.value)
   }
 
   const setEvents = (newEvents) => {
     events.value = newEvents.map((event) => {
-      return event.toPlainObject()
+      const { extendedProps, ...obj } = event.toPlainObject()
+      return {
+        ...obj,
+        ...extendedProps
+      }
     })
   }
 
   return {
     events,
-    urgencyTags,
     getDailyEventCounts,
     getUrgencyTagById,
+    getTypeTagById,
     addEvent,
     removeEvent,
     changeEvent,

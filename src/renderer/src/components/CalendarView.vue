@@ -1,5 +1,5 @@
 <template>
-  <div class="calendar-view">
+  <div class="calendar-view" :class="{ 'week-view': isWeekView }">
     <CustomHeader
       :date="currentDate"
       :title="headerTitle"
@@ -8,52 +8,76 @@
       @today="handleToday"
       @toggle-sidebar="emitToggleSidebar"
     />
-    <FullCalendar ref="calendarRef" :options="calendarOptions">
-      <template #dayCellContent="arg">
-        <div class="calendar-day">
-          <div :class="['day-content', { today: !arg.isPast && !arg.isFuture }]">
-            <label class="day-label">{{ arg.date.getDate() }}</label>
-            <span
-              :class="[
-                'lunar-text',
-                { festival: getLunarDate(arg.date).festival },
-                { 'today-lunar': !arg.isPast && !arg.isFuture }
-              ]"
-            >
-              {{ getLunarDate(arg.date).festival || getLunarDate(arg.date).lunarDayName }}
-            </span>
+    <div class="calendar-container">
+      <FullCalendar ref="calendarRef" :options="calendarOptions">
+        <template #dayCellContent="arg">
+          <div class="calendar-day">
+            <div :class="['day-content', { today: !arg.isPast && !arg.isFuture }]">
+              <label class="day-label">{{ arg.date.getDate() }}</label>
+              <span
+                :class="[
+                  'lunar-text',
+                  { festival: getLunarDate(arg.date).festival },
+                  { 'today-lunar': !arg.isPast && !arg.isFuture }
+                ]"
+              >
+                {{ getLunarDate(arg.date).festival || getLunarDate(arg.date).lunarDayName }}
+              </span>
+            </div>
+            <div v-if="hasDailyEvents(arg.date)" class="event-dots">
+              <template v-for="[tagId, count] in getDailyEventCounts(arg.date)" :key="tagId">
+                <div v-if="count > 0" class="event-tag-count">
+                  <TagIcon :tag="getUrgencyTag(Number(tagId))" />
+                  <span class="count">{{ count }}</span>
+                </div>
+              </template>
+            </div>
           </div>
-          <div v-if="hasDailyEvents(arg.date)" class="event-dots">
-            <template v-for="[tagId, count] in getDailyEventCounts(arg.date)" :key="tagId">
-              <div v-if="count > 0" class="event-tag-count">
-                <TagIcon :tag="getUrgencyTag(Number(tagId))" />
-                <span class="count">{{ count }}</span>
-              </div>
-            </template>
-          </div>
+        </template>
+        <template #dayHeaderContent="arg">
+          <span class="header-text">{{ arg.text.slice(-1) }}</span>
+        </template>
+      </FullCalendar>
+      <div class="view-toggle" @click="toggleWeekView">
+        <span class="toggle-arrow" :class="{ 'arrow-down': isWeekView }">▲</span>
+      </div>
+    </div>
+
+    <!-- 事件展示区域 -->
+    <div v-if="isWeekView" class="events-panel">
+      <perfect-scrollbar>
+        <div v-if="currentDayEvents.length" class="events-list">
+          <EventCard
+            v-for="event in currentDayEvents"
+            :key="event.id"
+            :event="event"
+            class="event-item"
+            @click="handleEventCardClick(event)"
+          />
         </div>
-      </template>
-      <template #dayHeaderContent="arg">
-        <span class="header-text">{{ arg.text.slice(-1) }}</span>
-      </template>
-    </FullCalendar>
-    <EventDialog ref="eventDialogRef" @save="saveEvent" />
+        <div v-else class="no-events">暂无事件</div>
+      </perfect-scrollbar>
+    </div>
+    <EventDialog ref="eventDialogRef" @save="saveEvent" @delete="deleteEvent" />
     <EventDetailsDialog ref="eventDetailsDialogRef" @update="updateEvent" @delete="deleteEvent" />
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, nextTick } from 'vue'
+import { onMounted, ref, nextTick, computed } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { useCalendarStore } from '../stores/calendar'
 import { Lunar } from 'lunar-javascript'
+import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
+import 'vue3-perfect-scrollbar/style.css'
 
 import EventDialog from './EventDialog.vue'
 import EventDetailsDialog from './EventDetailsDialog.vue'
 import CustomHeader from './CustomHeader.vue'
 import TagIcon from './TagIcon.vue'
+import EventCard from './EventCard.vue'
 
 const calendarStore = useCalendarStore()
 const eventDialogRef = ref(null)
@@ -63,6 +87,8 @@ const calendarRef = ref(null)
 const currentDate = ref(new Date())
 const headerTitle = ref('')
 
+const isWeekView = ref(false)
+
 const formatDateTime = (date) => {
   console.log('formatDateTime', date)
   const year = date.getFullYear()
@@ -71,6 +97,97 @@ const formatDateTime = (date) => {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+//###########################################################
+// 切换周视图
+//###########################################################
+const toggleWeekView = async () => {
+  const calendarApi = calendarRef.value?.getApi()
+  if (!calendarApi) return
+
+  isWeekView.value = !isWeekView.value
+
+  if (isWeekView.value) {
+    // 切换到周视图
+    calendarApi.changeView('dayGridWeek')
+    calendarApi.gotoDate(currentDate.value)
+    // 调整视图高度
+    await nextTick()
+    const viewContainer = calendarRef.value.$el.querySelector('.fc-view-harness')
+    if (viewContainer) {
+      viewContainer.style.height = '100px'
+      viewContainer.style.minHeight = '100px'
+      viewContainer.style.overflow = 'hidden'
+    }
+  } else {
+    // 切换回月视图
+    calendarApi.changeView('dayGridMonth')
+    // 恢复原始高度
+    await nextTick()
+    const viewContainer = calendarRef.value.$el.querySelector('.fc-view-harness')
+    if (viewContainer) {
+      viewContainer.style.height = ''
+      viewContainer.style.minHeight = ''
+      viewContainer.style.overflow = 'hidden'
+    }
+    calendarApi.updateSize()
+  }
+  calendarApi.select(currentDate.value)
+}
+
+//###########################################################
+// 周视图下事件显示
+//###########################################################
+const currentDayEvents = computed(() => {
+  return calendarStore.events
+    .filter((event) => {
+      const eventStart = new Date(event.start)
+      const eventEnd = new Date(event.end)
+      if (event.allDay) {
+        eventEnd.setDate(eventEnd.getDate() - 1)
+      }
+
+      const currentDateValue = currentDate.value
+      const currentDateStart = new Date(
+        currentDateValue.getFullYear(),
+        currentDateValue.getMonth(),
+        currentDateValue.getDate()
+      )
+      const currentDateEnd = new Date(
+        currentDateValue.getFullYear(),
+        currentDateValue.getMonth(),
+        currentDateValue.getDate(),
+        23,
+        59,
+        59
+      )
+
+      // 检查事件是否与当前日期有重叠
+      return (
+        // 事件开始时间在当天
+        (eventStart >= currentDateStart && eventStart <= currentDateEnd) ||
+        // 事件结束时间在当天
+        (eventEnd >= currentDateStart && eventEnd <= currentDateEnd) ||
+        // 事件跨越当天（开始时间在当天之前，结束时间在当天之后）
+        (eventStart <= currentDateStart && eventEnd >= currentDateEnd)
+      )
+    })
+    .map((event) => ({
+      ...event,
+      tags: {
+        urgencyTag: getUrgencyTag(event.urgencyTagId),
+        typeTags: event.typeTagIds?.map((id) => calendarStore.getTypeTagById(id)) || []
+      }
+    }))
+})
+
+// 添加事件卡片点击处理
+const handleEventCardClick = (event) => {
+  eventDialogRef.value?.showDialog({
+    ...event,
+    calendar: calendarRef.value?.getApi()
+  })
 }
 
 //###########################################################
@@ -95,7 +212,6 @@ const emitToggleSidebar = async () => {
 // event-dots 显示逻辑
 //###########################################################
 const getUrgencyTag = (tagId) => {
-  console.log('getUrgencyTag', calendarStore.urgencyTags, tagId)
   return calendarStore.getUrgencyTagById(tagId)
 }
 
@@ -104,9 +220,6 @@ const getDailyEventCounts = (date) => {
   const sortedtagCounts = Object.entries(tagCounts).sort(
     (tagCount1, tagCount2) => tagCount2[0] - tagCount1[0]
   )
-  if (Object.keys(sortedtagCounts).length > 0) {
-    console.log('getDailyEventCounts', sortedtagCounts)
-  }
 
   return sortedtagCounts
 }
@@ -258,7 +371,6 @@ const calendarOptions = {
   initialView: 'dayGridMonth',
   locale: 'zh-cn',
   headerToolbar: false,
-  footerToolbar: false,
   editable: true,
   selectable: true,
   dayMaxEvents: false,
@@ -270,7 +382,13 @@ const calendarOptions = {
   eventClick: handleEventClick,
   eventAdd: handleEventAdd,
   eventRemove: handleEventRemove,
-  eventChange: handleEventChange
+  eventChange: handleEventChange,
+  views: {
+    dayGridWeek: {
+      titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
+      dayHeaderFormat: { weekday: 'short' }
+    }
+  }
 }
 
 onMounted(() => {
@@ -279,6 +397,25 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.calendar-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 8px 12px 4px rgba(0, 0, 0, 0.04);
+}
+
+.week-view .calendar-container {
+  flex: 0 0 120px;
+  min-height: 120px;
+  max-height: 120px;
+  position: relative; /* 确保定位上下文正确 */
+}
+
 .calendar-view {
   --day-size: 46px;
   --day-radius: 50%;
@@ -290,11 +427,11 @@ onMounted(() => {
   --header-tr-height: 20px;
   --event-tag-font-size: 11px;
 
-  flex: 1;
+  position: relative;
   display: flex;
   flex-direction: column;
   background-color: #ffffff;
-  overflow: hidden;
+  overflow: hidden !important;
   height: 100%;
   width: 100%;
 }
@@ -469,5 +606,106 @@ onMounted(() => {
   width: var(--day-size);
   height: var(--day-size);
   border-radius: var(--day-radius);
+}
+
+/* 周视图相关 */
+
+.calendar-view.week-view {
+  height: 100%; /* 改为100%以填充整个容器 */
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.fc) {
+  height: 100% !important;
+  overflow: hidden;
+}
+
+.calendar-view:not(.week-view) .calendar-container {
+  flex: 1;
+  height: 100%;
+}
+
+/* 修改切换按钮样式 */
+.view-toggle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 16px;
+  /* 移除背景色和阴影 */
+  background-color: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+/* 周视图时调整切换按钮位置 */
+.calendar-view:not(.week-view) .view-toggle {
+  bottom: 10px; /* 月视图时的位置 */
+}
+
+.week-view .view-toggle {
+  bottom: 2px;
+}
+
+.view-toggle:hover {
+  background-color: transparent;
+  transform: translateX(-50%);
+}
+
+.toggle-arrow {
+  color: #666;
+  font-size: 16px; /* 稍微调大箭头尺寸 */
+}
+
+.arrow-down {
+  transform: rotate(180deg);
+}
+
+/* 事件展示区域 */
+.events-panel {
+  flex: 1;
+  margin-top: 0; /* 移除顶部边距 */
+  background-color: #ffffff;
+  position: relative;
+  z-index: 1; /* 确保在切换按钮之下 */
+  box-shadow: inset 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  height: calc(100% - 120px);
+  overflow: hidden;
+}
+
+:deep(.ps) {
+  height: 100%;
+  padding: 20px;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.event-item {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.event-item:hover {
+  transform: translateY(-2px);
+}
+
+.no-events {
+  text-align: center;
+  color: #909399;
+  font-size: 14px;
+  padding: 40px 0;
 }
 </style>

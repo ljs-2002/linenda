@@ -63,6 +63,11 @@ const formattedStartTime = computed(() => {
 })
 
 const formattedEndTime = computed(() => {
+  if (props.event.allDay) {
+    // 对全天事件，结束时间减去一天
+    const endDate = dayjs(props.event.end).subtract(1, 'day')
+    return formatDateTime(endDate, props.event.allDay)
+  }
   return formatDateTime(props.event.end, props.event.allDay)
 })
 

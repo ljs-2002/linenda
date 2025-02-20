@@ -1,5 +1,10 @@
 <template>
-  <el-dialog v-model="dialogVisible" :title="isNew ? '新建事件' : '编辑事件'" width="500px">
+  <el-dialog
+    v-model="dialogVisible"
+    :title="isNew ? '新建事件' : '编辑事件'"
+    width="500px"
+    :close-on-click-modal="false"
+  >
     <perfect-scrollbar class="dialog-scroll-container">
       <el-form ref="formRef" :model="eventForm" :rules="rules" label-width="100px">
         <!-- 基本配置 -->
@@ -83,6 +88,7 @@
 
     <template #footer>
       <span class="dialog-footer">
+        <el-button v-if="!isNew" type="danger" @click="handleDelete">删除</el-button>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </span>
@@ -94,6 +100,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { watch, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import 'vue3-perfect-scrollbar/style.css'
 import TagIcon from './TagIcon.vue'
@@ -199,7 +206,7 @@ const rules = {
   end: [{ required: true, message: '请选择结束时间', trigger: 'change' }]
 }
 
-const emit = defineEmits(['save'])
+const emit = defineEmits(['save', 'delete'])
 
 const handleSubmit = async () => {
   if (!formRef.value) return
@@ -216,12 +223,32 @@ const handleSubmit = async () => {
   }
 }
 
+const handleDelete = async () => {
+  try {
+    await ElMessageBox.confirm(`确定要删除事件 "${eventForm.title}" 吗？`, '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    emit('delete', { ...eventForm, calendar: calendar.value })
+    dialogVisible.value = false
+    resetForm()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除事件失败:', error)
+    }
+  }
+}
+
 const resetForm = () => {
   if (formRef.value) {
     formRef.value.resetFields()
   }
   Object.assign(eventForm, eventFormTamplate)
+  eventForm.typeTagIds = []
+  eventForm.urgencyTagId = 1
   firstSelectedField.value = null
+  calendar.value = null
 }
 
 watch(
@@ -324,13 +351,19 @@ defineExpose({
 }
 
 .dialog-scroll-container {
-  max-height: calc(80vh - 150px); /* 设置最大高度，减去标题和按钮的高度 */
-  padding-right: 20px; /* 为滚动条留出空间 */
+  max-height: calc(80vh - 200px); /* 设置最大高度，减去标题和按钮的高度 */
+  padding-right: 16px; /* 为滚动条留出空间 */
   overflow: hidden;
 }
 
 .el-collapse-item__content {
   transition: all 0.3s ease-in-out;
   padding-bottom: 16px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
 }
 </style>
