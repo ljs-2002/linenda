@@ -35,9 +35,15 @@
         </div>
       </div>
     </div>
-    <perfect-scrollbar v-if="event.description" class="event-description-container">
-      <div class="event-description"><strong>描述：</strong>{{ event.description }}</div>
-    </perfect-scrollbar>
+    <div v-if="event.description" class="description-wrapper">
+      <div class="description-header" @click.stop="toggleDescription">
+        <strong>描述：</strong>
+        <span class="toggle-arrow" :class="{ 'arrow-down': isDescriptionExpanded }">▶</span>
+      </div>
+      <perfect-scrollbar v-show="isDescriptionExpanded" class="event-description-container">
+        <div class="event-description">{{ event.description }}</div>
+      </perfect-scrollbar>
+    </div>
     <div v-if="event.url" class="event-url">
       <strong>链接：</strong><a :href="event.url" target="_blank">查看详情</a>
     </div>
@@ -45,7 +51,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import dayjs from 'dayjs'
 import TagIcon from './TagIcon.vue'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
@@ -75,6 +81,8 @@ const status = computed(() => {
   return getEventStatus(props.event)
 })
 
+const isDescriptionExpanded = ref(false)
+
 const formatDateTime = (dateStr, isAllDay) => {
   return isAllDay ? dayjs(dateStr).format('YYYY-MM-DD') : dayjs(dateStr).format('YYYY-MM-DD HH:mm')
 }
@@ -91,6 +99,10 @@ const getEventStatus = (event) => {
   } else {
     return { text: '进行中', class: 'status-ongoing' }
   }
+}
+
+const toggleDescription = () => {
+  isDescriptionExpanded.value = !isDescriptionExpanded.value
 }
 </script>
 
@@ -187,15 +199,32 @@ const getEventStatus = (event) => {
   margin-bottom: 12px;
 }
 
+.description-wrapper {
+  margin-bottom: 12px;
+}
+
+.description-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+}
+
+.toggle-arrow {
+  margin-left: 4px;
+  transition: transform 0.3s ease;
+  color: #666;
+  font-size: 12px;
+}
+
+.toggle-arrow.arrow-down {
+  transform: rotate(90deg);
+}
+
 .event-description-container {
-  flex: 1;
-  min-height: 0;
-  max-height: 200px;
-  margin-bottom: 2px;
-  position: relative;
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100%;
+  margin-top: 8px;
+  padding-left: 16px;
 }
 
 .event-description {
