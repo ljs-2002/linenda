@@ -6,7 +6,7 @@
   >
     <div class="title-content">
       <div class="left-section">
-        <img src="@resources/icon.png" class="logo" />
+        <img src="@resources/icons/icon.ico" class="logo" />
         <span class="divider"></span>
       </div>
       <span class="title">{{ title }}</span>

@@ -1,4 +1,4 @@
-appId: com.linAPP.lineda
+appId: com.linAPP.linenda
 productName: linenda
 asar: true
 compression: maximum
@@ -10,6 +10,10 @@ files:
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}'
+  - '!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}'
+  - '!**/node_modules/*.d.ts'
+  - '!**/node_modules/.bin'
 asarUnpack:
   - resources/**
 win:
@@ -23,6 +27,8 @@ nsis:
   perMachine: true
   allowElevation: false
   allowToChangeInstallationDirectory: true
+  installerIcon: 'build/icon.ico'
+  uninstallerIcon: 'build/icon.ico'
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -33,19 +39,7 @@ mac:
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}
-linux:
-  target:
-    - AppImage
-    - snap
-    - deb
-  maintainer: electronjs.org
-  category: Utility
-appImage:
-  artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-# publish:
-#   provider: generic
-#   url: https://example.com/auto-updates
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
 afterPack: ./removeLocales.js

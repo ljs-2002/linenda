@@ -29,14 +29,14 @@ export default defineConfig({
         ext: '.gz' // 生成 .gz 文件
       })
     ],
-    minify: 'terser',
-    terserOptions: {
-      compress: true, // 启用压缩
-      mangle: true, // 启用变量名混淆
-      keep_classnames: false, // 不保留类名
-      keep_fnames: false // 不保留函数名
-    },
-    rollupOptions: {
+    build: {
+      minify: 'terser',
+      terserOptions: {
+        compress: true, // 启用压缩
+        mangle: true, // 启用变量名混淆
+        keep_classnames: false, // 不保留类名
+        keep_fnames: false // 不保留函数名
+      },
       manualChunks: {
         // 将第三方库分块打包
         'element-plus': ['element-plus'],
@@ -53,19 +53,33 @@ export default defineConfig({
           '@fortawesome/vue-fontawesome'
         ]
       },
-      // 自定义chunk文件名
-      chunkFileNames: 'assets/js/[name]-[hash].js',
-      entryFileNames: 'assets/js/[name]-[hash].js',
-      assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
-      treeshake: {
-        preset: 'smallest',
-        propertyReadSideEffects: false,
-        moduleSideEffects: false,
-        tryCatchDeoptimization: false,
-        correctVarValueBeforeDeclaration: false
-      }
-    },
-    cssCodeSplit: true, //分隔css
-    sourcemap: false // 禁用 sourcemap
+      rollupOptions: {
+        output: {
+          // 自定义chunk文件名
+          chunkFileNames: 'assets/js/[name]-[hash].js',
+          entryFileNames: 'assets/js/[name]-[hash].js',
+          assetFileNames(assetInfo) {
+            // 使用 fileName 替代 name
+            if (assetInfo.fileName?.endsWith('.css')) {
+              return `css/[name]-[hash][extname]`
+            }
+            const imgExts = ['.png', '.jpeg', '.jpg', '.gif', '.svg', '.ico', '.webp']
+            if (imgExts.some((ext) => assetInfo.fileName?.endsWith(ext))) {
+              return `images/[name]-[hash][extname]`
+            }
+            return `assets/[name]-[hash][extname]`
+          }
+        },
+        treeshake: {
+          preset: 'smallest',
+          propertyReadSideEffects: false,
+          moduleSideEffects: false,
+          tryCatchDeoptimization: false,
+          correctVarValueBeforeDeclaration: false
+        }
+      },
+      cssCodeSplit: true, //分隔css
+      sourcemap: false // 禁用 sourcemap
+    }
   }
 })
