@@ -187,6 +187,7 @@ const handleEndChange = () => {
 }
 
 const eventFormTamplate = {
+  id: '',
   title: '',
   start: '',
   end: '',
@@ -206,7 +207,7 @@ const rules = {
   end: [{ required: true, message: '请选择结束时间', trigger: 'change' }]
 }
 
-const emit = defineEmits(['save', 'delete'])
+const emit = defineEmits(['save', 'update', 'delete'])
 
 const handleSubmit = async () => {
   if (!formRef.value) return
@@ -214,7 +215,18 @@ const handleSubmit = async () => {
   try {
     await formRef.value.validate()
     const color = getSelectedTag(eventForm.urgencyTagId).color
-    emit('save', { ...eventForm, color: color, calendar: calendar.value })
+    const eventData = {
+      ...eventForm,
+      color: color,
+      calendar: calendar.value,
+      id: isNew.value ? Date.now().toString() : eventForm.id
+    }
+
+    if (isNew.value) {
+      emit('save', eventData)
+    } else {
+      emit('update', eventData)
+    }
     dialogVisible.value = false
     resetForm()
   } catch (error) {
@@ -292,6 +304,7 @@ const isSameDay = (date1, date2) => {
 const processEventData = (data) => {
   const { calendar: cal, ...rest } = data
   calendar.value = cal
+
   // 检查非全天事件的日期是否跨天
   if (!rest.allDay && rest.start && rest.end) {
     const startDate = new Date(rest.start)

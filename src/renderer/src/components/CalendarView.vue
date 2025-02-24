@@ -58,8 +58,12 @@
         <div v-else class="no-events">暂无事件</div>
       </perfect-scrollbar>
     </div>
-    <EventDialog ref="eventDialogRef" @save="saveEvent" @delete="deleteEvent" />
-    <EventDetailsDialog ref="eventDetailsDialogRef" @update="updateEvent" @delete="deleteEvent" />
+    <EventDialog
+      ref="eventDialogRef"
+      @save="saveEvent"
+      @update="updateEvent"
+      @delete="deleteEvent"
+    />
   </div>
 </template>
 
@@ -74,7 +78,6 @@ import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import 'vue3-perfect-scrollbar/style.css'
 
 import EventDialog from './EventDialog.vue'
-import EventDetailsDialog from './EventDetailsDialog.vue'
 import CustomHeader from './CustomHeader.vue'
 import TagIcon from './TagIcon.vue'
 import EventCard from './EventCard.vue'
@@ -234,11 +237,7 @@ const hasDailyEvents = (date) => {
 //###########################################################
 const saveEvent = async (eventData) => {
   const { calendar, ...eventDetails } = eventData
-  const newEvent = {
-    ...eventDetails,
-    id: Date.now().toString()
-  }
-  calendar.addEvent(newEvent)
+  calendar.addEvent(eventDetails)
 }
 
 const updateEvent = async (eventData) => {
