@@ -186,7 +186,7 @@ const handleEndChange = () => {
   }
 }
 
-const eventFormTamplate = {
+const getEventFormTemplate = () => ({
   id: '',
   title: '',
   start: '',
@@ -198,9 +198,9 @@ const eventFormTamplate = {
   startEditable: true,
   urgencyTagId: 1,
   typeTagIds: []
-}
+})
 
-const eventForm = reactive(eventFormTamplate)
+const eventForm = reactive(getEventFormTemplate())
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
   start: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
@@ -256,9 +256,10 @@ const resetForm = () => {
   if (formRef.value) {
     formRef.value.resetFields()
   }
-  Object.assign(eventForm, eventFormTamplate)
-  eventForm.typeTagIds = []
-  eventForm.urgencyTagId = 1
+  const template = getEventFormTemplate()
+  Object.keys(template).forEach((key) => {
+    eventForm[key] = template[key]
+  })
   firstSelectedField.value = null
   calendar.value = null
 }
